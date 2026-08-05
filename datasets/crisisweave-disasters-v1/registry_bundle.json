@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "crisisweave-global-disasters",
+  "version": "2.1.0-source-registry",
+  "release_status": "source_registry",
+  "base_manifest": "manifest.json",
+  "expansion_manifest": "diversity_expansion.json",
+  "annotation_plan_expansion": "annotation_plan_expansion.json",
+  "split_counts": {
+    "development": 11,
+    "test": 14,
+    "train": 21
+  },
+  "test_coverage_policy": {
+    "required_hazards": [
+      "drought",
+      "earthquake",
+      "extreme_heat",
+      "flood",
+      "industrial_accident",
+      "landslide",
+      "tropical_cyclone",
+      "volcanic_eruption",
+      "wildfire"
+    ],
+    "required_geographic_regions": [
+      "africa",
+      "asia",
+      "europe",
+      "latin_america_caribbean",
+      "middle_east_north_africa",
+      "north_america",
+      "oceania"
+    ],
+    "required_languages": ["ar", "el", "en", "es", "fr", "pt-BR"],
+    "minimum_recent_public_events": 2
+  },
+  "rebalance": {
+    "parent_version": "2.0.0-source-registry",
+    "immutable_v1_assignments_preserved": true,
+    "immutable_v1_assignment_sha256": "sha256:1498afbe39e136fe0b0378871170992e840c91b46366a0321133a65ff7f9bc8c",
+    "minimum_test_event_count": 14,
+    "count_proof": "The immutable v1 contributes six test events and two hazards. Covering the seven remaining hazards consumes seven expansion slots. French and Greek are verified only on different wildfire events, so one additional wildfire slot is necessary: 6 + 7 + 1 = 14.",
+    "annotation_or_result_previously_frozen": false
+  },
+  "composition_note": "The immutable 24-event v1 assignments remain unchanged. Version 2.1 preregisters a minimal one-event test expansion over v2.0 so the sealed split covers every verified hazard, region and source language before annotation. Private holdouts remain separately committed by the custodian."
+}

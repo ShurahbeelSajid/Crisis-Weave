@@ -1,0 +1,277 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e ".[dev,ui,telemetry]"
+      - run: ruff format --check .
+      - run: ruff check .
+      - run: mypy src
+      - name: Reject custodian-only benchmark material
+        run: python scripts/check_benchmark_leaks.py --root .
+      - run: pytest --cov --cov-report=term-missing
+      - name: Validate the unrendered Kubernetes security contract
+        run: python scripts/validate_kubernetes_release.py deploy/kubernetes/base
+
+  production-compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Non-resolvable example digests validate release syntax without pulling images.
+    env:
+      CRISISWEAVE_CLAMAV_IMAGE: "ghcr.io/example/crisisweave-clamav@sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      CRISISWEAVE_API_IMAGE: "ghcr.io/example/crisisweave-api@sha256:2222222222222222222222222222222222222222222222222222222222222222"
+      CRISISWEAVE_UI_IMAGE: "ghcr.io/example/crisisweave-ui@sha256:3333333333333333333333333333333333333333333333333333333333333333"
+      CRISISWEAVE_CADDY_IMAGE: "ghcr.io/example/crisisweave-gateway@sha256:4444444444444444444444444444444444444444444444444444444444444444"
+      CRISISWEAVE_DOMAIN: ci.example.invalid
+      CRISISWEAVE_CORS_ORIGINS: https://ci.example.invalid
+      CRISISWEAVE_TRUSTED_HOSTS: ci.example.invalid,api
+      CRISISWEAVE_API_POSTGRES_DSN: postgresql://crisisweave_api@postgres.ci.example.invalid/crisisweave?sslmode=verify-full
+      CRISISWEAVE_WORKER_POSTGRES_DSN: postgresql://crisisweave_worker@postgres.ci.example.invalid/crisisweave?sslmode=verify-full
+      CRISISWEAVE_MIGRATION_POSTGRES_DSN: postgresql://crisisweave_migrator@postgres.ci.example.invalid/crisisweave?sslmode=verify-full
+      CRISISWEAVE_POSTGRES_API_ROLE: crisisweave_api
+      CRISISWEAVE_POSTGRES_WORKER_ROLE: crisisweave_worker
+      CRISISWEAVE_POSTGRES_POOL_MIN_SIZE: "1"
+      CRISISWEAVE_POSTGRES_POOL_MAX_SIZE: "8"
+      CRISISWEAVE_S3_BUCKET: crisisweave-ci-evidence
+      CRISISWEAVE_S3_PREFIX: crisisweave/ci
+      CRISISWEAVE_S3_REGION: us-east-1
+      CRISISWEAVE_S3_ENDPOINT_URL: https://objects.ci.example.invalid
+      CRISISWEAVE_S3_ADDRESSING_STYLE: virtual
+      CRISISWEAVE_S3_SERVER_SIDE_ENCRYPTION: AES256
+      CRISISWEAVE_API_WORKERS: "2"
+      CRISISWEAVE_EGRESS_POLICY_SHA256: "5555555555555555555555555555555555555555555555555555555555555555"
+      CRISISWEAVE_API_KEYS: ci@ui-2026=ci-only-tenant-key-000000000001
+      CRISISWEAVE_SERVICE_KEY_ROLE_BINDINGS: ci@ui-2026=operator
+      CRISISWEAVE_METRICS_API_KEY: ci-only-metrics-key-000000000002
+      CRISISWEAVE_PARSER_SERVICE_TOKEN: ci-only-parser-key-000000000003
+      CRISISWEAVE_QDRANT_URL: https://qdrant.ci.example.invalid
+      CRISISWEAVE_API_QDRANT_API_KEY: ci-only-api-qdrant-key-000000000004
+      CRISISWEAVE_WORKER_QDRANT_API_KEY: ci-only-worker-qdrant-key-000000000005
+      CRISISWEAVE_MIGRATION_QDRANT_API_KEY: ci-only-migrate-qdrant-key-000000006
+      CRISISWEAVE_API_S3_ACCESS_KEY_ID: ci-api-s3-identity
+      CRISISWEAVE_API_S3_SECRET_ACCESS_KEY: ci-only-api-s3-secret-000000000007
+      CRISISWEAVE_WORKER_S3_ACCESS_KEY_ID: ci-worker-s3-identity
+      CRISISWEAVE_WORKER_S3_SECRET_ACCESS_KEY: ci-only-worker-s3-secret-000000008
+      CRISISWEAVE_LLM_BASE_URL: https://llm.ci.example.invalid/v1
+      CRISISWEAVE_LLM_API_KEY: ci-only-llm-key-000000000009
+      CRISISWEAVE_LLM_ROUTER_MODEL: ci-tool-capable-model
+      CRISISWEAVE_LLM_ANSWER_MODEL: ci-vision-capable-model
+      CRISISWEAVE_WEB_SEARCH_PROVIDER: disabled
+      CRISISWEAVE_AUTH_MODE: hybrid
+      CRISISWEAVE_OIDC_ISSUER_URL: https://identity.ci.example.invalid
+      CRISISWEAVE_OIDC_AUDIENCE: crisisweave-ci
+      CRISISWEAVE_OIDC_JWKS_URL: https://identity.ci.example.invalid/.well-known/jwks.json
+      CRISISWEAVE_GATEWAY_IPV4: 172.30.77.10
+      CRISISWEAVE_API_GATEWAY_SUBNET: 172.30.77.0/24
+      CRISISWEAVE_FORWARDED_ALLOW_IPS: 172.30.77.10/32
+      CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT: https://otel.ci.example.invalid/v1/traces
+      CRISISWEAVE_OTEL_CA_HOST_PATH: /etc/ssl/certs/ca-certificates.crt
+      CRISISWEAVE_QUERY_COMPUTE_COST_PER_HOUR_USD: "1.0"
+      CRISISWEAVE_INGESTION_COMPUTE_COST_PER_HOUR_USD: "1.0"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Validate immutable images and gateway boundary
+        run: python scripts/validate_production_config.py
+      - name: Validate standalone production Compose rendering
+        run: docker compose -f deploy/compose.production.yaml config --quiet
+
+  benchmark-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+      - name: Validate the event-disjoint benchmark bundle
+        run: >-
+          python -m scripts.benchmark_metrics validate-bundle
+          --manifest datasets/crisisweave-disasters-v1/manifest.json
+          --gold datasets/crisisweave-disasters-v1/gold_cases.json
+      - name: Validate the diverse source registry without releasing frozen labels
+        run: >-
+          python -m scripts.benchmark_governance validate-registry-bundle
+          datasets/crisisweave-disasters-v1/registry_bundle.json
+      - name: Exercise the offline materialization plan for every split
+        run: >-
+          python -m scripts.materialize_benchmark
+          --manifest datasets/crisisweave-disasters-v1/manifest.json
+          --output "${RUNNER_TEMP}/crisisweave-benchmark-dry-run"
+          --split train --split development --split test
+
+  deterministic-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CRISISWEAVE_APP_ENV: development
+      CRISISWEAVE_DATA_DIR: ${{ runner.temp }}/crisisweave-eval
+      CRISISWEAVE_API_KEYS: eval=ci-deterministic-eval-key-000001
+      CRISISWEAVE_API_KEY: ci-deterministic-eval-key-000001
+      CRISISWEAVE_API_URL: http://127.0.0.1:8000
+      CRISISWEAVE_ENABLE_DOCS: "false"
+      CRISISWEAVE_RATE_LIMIT_REQUESTS: "1000"
+      CRISISWEAVE_EMBEDDING_PROVIDER: hash
+      CRISISWEAVE_RERANKER_PROVIDER: lexical
+      CRISISWEAVE_LLM_PROVIDER: disabled
+      CRISISWEAVE_WEB_SEARCH_PROVIDER: disabled
+      CRISISWEAVE_TRANSCRIPTION_PROVIDER: disabled
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -e .
+      - name: Seed and run deterministic API evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          api_log="${RUNNER_TEMP}/crisisweave-eval-api.log"
+          crisisweave serve --host 127.0.0.1 --port 8000 >"${api_log}" 2>&1 &
+          api_pid=$!
+          cleanup() {
+            result=$?
+            kill "${api_pid}" 2>/dev/null || true
+            wait "${api_pid}" 2>/dev/null || true
+            if [ "${result}" -ne 0 ]; then
+              cat "${api_log}"
+            fi
+            exit "${result}"
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8000/health/ready >/dev/null; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "${api_pid}" 2>/dev/null; then
+              echo "CrisisWeave API exited before readiness" >&2
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "${ready}" -ne 1 ]; then
+            echo "CrisisWeave API did not become ready" >&2
+            exit 1
+          fi
+          python scripts/evaluate.py
+
+  container-build-and-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      RUNTIME_IMAGE: crisisweave-runtime:${{ github.sha }}
+      UI_IMAGE: crisisweave-ui:${{ github.sha }}
+      GATEWAY_IMAGE: crisisweave-gateway:${{ github.sha }}
+      CLAMAV_IMAGE: crisisweave-clamav:${{ github.sha }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Build runtime API image
+        run: docker build --target runtime --tag "${RUNTIME_IMAGE}" .
+      - name: Build runtime UI image
+        run: docker build --target runtime-ui --tag "${UI_IMAGE}" .
+      - name: Build gateway image with the reviewed Caddyfile
+        run: docker build --target gateway --tag "${GATEWAY_IMAGE}" .
+      - name: Build ClamAV image with the reviewed stream limit
+        run: docker build --target clamav-runtime --tag "${CLAMAV_IMAGE}" .
+      - name: Validate the gateway image configuration
+        run: >-
+          docker run --rm --entrypoint caddy
+          --env CRISISWEAVE_DOMAIN=ci.example.invalid
+          "${GATEWAY_IMAGE}" validate
+          --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Validate the ClamAV stream limit
+        run: >-
+          docker run --rm --entrypoint clamconf "${CLAMAV_IMAGE}" -n
+          | grep -qx 'StreamMaxLength = "67108864"'
+      - name: Verify images use the unprivileged runtime account
+        run: |
+          test "$(docker image inspect --format '{{.Config.User}}' "${RUNTIME_IMAGE}")" = "10001:10001"
+          test "$(docker image inspect --format '{{.Config.User}}' "${UI_IMAGE}")" = "10001:10001"
+          test "$(docker image inspect --format '{{.Config.User}}' "${CLAMAV_IMAGE}")" = "clamav"
+      - name: Generate CycloneDX SBOM for runtime image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.RUNTIME_IMAGE }}
+          scanners: vuln
+          format: cyclonedx
+          output: crisisweave-runtime.cdx.json
+          exit-code: "0"
+      - name: Upload runtime SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: crisisweave-runtime-sbom-${{ github.sha }}
+          path: crisisweave-runtime.cdx.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Scan runtime image for high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.RUNTIME_IMAGE }}
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - name: Scan UI image for high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.UI_IMAGE }}
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - name: Scan gateway image for high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.GATEWAY_IMAGE }}
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+      - name: Scan ClamAV image for high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.CLAMAV_IMAGE }}
+          scanners: vuln
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"

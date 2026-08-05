@@ -1,0 +1,476 @@
+name: Build and attest release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      registry_repository:
+        description: Lowercase registry repository without a tag or digest
+        required: true
+        type: string
+      python_base_image:
+        description: Python base image pinned by sha256 digest
+        required: true
+        type: string
+      text_model:
+        description: Hugging Face text-embedding repository ID
+        required: true
+        type: string
+      text_revision:
+        description: Immutable 40-character text-model commit
+        required: true
+        type: string
+      visual_model:
+        description: Hugging Face visual-embedding repository ID
+        required: true
+        type: string
+      visual_revision:
+        description: Immutable 40-character visual-model commit
+        required: true
+        type: string
+      reranker_model:
+        description: Hugging Face reranker repository ID
+        required: true
+        type: string
+      reranker_revision:
+        description: Immutable 40-character reranker commit
+        required: true
+        type: string
+      whisper_model:
+        description: Hugging Face transcription repository ID
+        required: true
+        type: string
+      whisper_revision:
+        description: Immutable 40-character transcription-model commit
+        required: true
+        type: string
+      ui_image:
+        description: Reviewed UI image pinned by sha256 digest
+        required: true
+        type: string
+      otel_image:
+        description: Reviewed OpenTelemetry image pinned by sha256 digest
+        required: true
+        type: string
+      kubernetes_release_tree:
+        description: Repository-relative Kustomize release tree to render and validate
+        required: true
+        default: deploy/kubernetes/base
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: crisisweave-promotion-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  promote-candidate:
+    name: Build, verify, scan, sign, attest, and bind the candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    environment: production-promotion
+    permissions:
+      artifact-metadata: write
+      attestations: write
+      contents: read
+      id-token: write
+      packages: write
+    steps:
+      - name: Check out the exact release commit
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Set up the supported Python runtime
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.12.13"
+
+      - name: Validate immutable promotion inputs
+        id: inputs
+        shell: bash
+        env:
+          APPROVED_REGISTRY_REPOSITORY: ${{ vars.PROMOTION_REGISTRY_REPOSITORY }}
+          REGISTRY_REPOSITORY: ${{ inputs.registry_repository }}
+          PYTHON_BASE_IMAGE: ${{ inputs.python_base_image }}
+          TEXT_MODEL: ${{ inputs.text_model }}
+          TEXT_REVISION: ${{ inputs.text_revision }}
+          VISUAL_MODEL: ${{ inputs.visual_model }}
+          VISUAL_REVISION: ${{ inputs.visual_revision }}
+          RERANKER_MODEL: ${{ inputs.reranker_model }}
+          RERANKER_REVISION: ${{ inputs.reranker_revision }}
+          WHISPER_MODEL: ${{ inputs.whisper_model }}
+          WHISPER_REVISION: ${{ inputs.whisper_revision }}
+          UI_IMAGE: ${{ inputs.ui_image }}
+          OTEL_IMAGE: ${{ inputs.otel_image }}
+          KUBERNETES_RELEASE_TREE: ${{ inputs.kubernetes_release_tree }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            echo "Promotion must be dispatched from a reviewed release tag." >&2
+            exit 1
+          fi
+
+          release_tree="$(python - \
+            "${KUBERNETES_RELEASE_TREE}" \
+            "${TEXT_MODEL}" "${TEXT_REVISION}" \
+            "${VISUAL_MODEL}" "${VISUAL_REVISION}" \
+            "${RERANKER_MODEL}" "${RERANKER_REVISION}" \
+            "${WHISPER_MODEL}" "${WHISPER_REVISION}" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          from scripts.cache_models import immutable_revision, model_id
+
+          raw_tree = sys.argv[1]
+          if not re.fullmatch(r"[A-Za-z0-9._/-]{1,240}", raw_tree) or ".." in Path(raw_tree).parts:
+              raise SystemExit("Kubernetes release tree must be a bounded repository-relative path")
+          root = Path.cwd().resolve()
+          tree = (root / raw_tree).resolve(strict=True)
+          try:
+              tree.relative_to(root)
+          except ValueError as exc:
+              raise SystemExit("Kubernetes release tree escapes the checked-out repository") from exc
+          if not tree.is_dir() or not any((tree / name).is_file() for name in ("kustomization.yaml", "kustomization.yml")):
+              raise SystemExit("Kubernetes release tree must contain a Kustomization")
+
+          values = sys.argv[2:]
+          for index in range(0, len(values), 2):
+              model_id(values[index])
+              immutable_revision(values[index + 1])
+          print(tree)
+          PY
+          )"
+
+          python - \
+            "${REGISTRY_REPOSITORY}" "${APPROVED_REGISTRY_REPOSITORY}" \
+            "${PYTHON_BASE_IMAGE}" "${UI_IMAGE}" "${OTEL_IMAGE}" <<'PY'
+          import re
+          import sys
+
+          repository, approved_repository, *images = sys.argv[1:]
+          if not approved_repository or repository != approved_repository:
+              raise SystemExit(
+                  "registry_repository must exactly match the protected promotion target"
+              )
+          repository_pattern = re.compile(
+              r"[a-z0-9][a-z0-9.-]*(?::[0-9]{1,5})?/"
+              r"[a-z0-9][a-z0-9._/-]*[a-z0-9]"
+          )
+          if (
+              not repository_pattern.fullmatch(repository)
+              or ".." in repository
+              or "//" in repository
+              or ":" in repository.split("/", 1)[1]
+          ):
+              raise SystemExit("registry_repository must be a lowercase tag-free registry path")
+
+          image_pattern = re.compile(r"[a-z0-9][a-z0-9._:/-]{1,300}@sha256:([a-f0-9]{64})")
+          for image in images:
+              match = image_pattern.fullmatch(image)
+              if not match or match.group(1) == "0" * 64 or ".." in image or "//" in image:
+                  raise SystemExit("every supplied image must use a non-placeholder sha256 digest")
+          PY
+
+          {
+            echo "registry_host=${REGISTRY_REPOSITORY%%/*}"
+            echo "registry_repository=${REGISTRY_REPOSITORY}"
+            echo "release_tree=${release_tree}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Authenticate to GHCR with the ephemeral workflow token
+        if: ${{ steps.inputs.outputs.registry_host == 'ghcr.io' }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REGISTRY_HOST: ${{ steps.inputs.outputs.registry_host }}
+        run: |
+          set -euo pipefail
+          printf '%s' "${GITHUB_TOKEN}" | docker login "${REGISTRY_HOST}" \
+            --username "${GITHUB_ACTOR}" --password-stdin
+
+      - name: Authenticate to the explicit organizational registry
+        if: ${{ steps.inputs.outputs.registry_host != 'ghcr.io' }}
+        shell: bash
+        env:
+          PROMOTION_REGISTRY_PASSWORD: ${{ secrets.PROMOTION_REGISTRY_PASSWORD }}
+          PROMOTION_REGISTRY_USERNAME: ${{ secrets.PROMOTION_REGISTRY_USERNAME }}
+          REGISTRY_HOST: ${{ steps.inputs.outputs.registry_host }}
+        run: |
+          set -euo pipefail
+          username="${PROMOTION_REGISTRY_USERNAME}"
+          password="${PROMOTION_REGISTRY_PASSWORD}"
+          if [[ -z "${username}" || -z "${password}" ]]; then
+            echo "Organizational registry credentials are required for this registry." >&2
+            exit 1
+          fi
+          printf '%s' "${password}" | docker login "${REGISTRY_HOST}" --username "${username}" --password-stdin
+
+      - name: Build and push the exact model-bundle target
+        id: subject
+        shell: bash
+        env:
+          PYTHON_BASE_IMAGE: ${{ inputs.python_base_image }}
+          REGISTRY_REPOSITORY: ${{ steps.inputs.outputs.registry_repository }}
+          RERANKER_MODEL: ${{ inputs.reranker_model }}
+          RERANKER_REVISION: ${{ inputs.reranker_revision }}
+          TEXT_MODEL: ${{ inputs.text_model }}
+          TEXT_REVISION: ${{ inputs.text_revision }}
+          VISUAL_MODEL: ${{ inputs.visual_model }}
+          VISUAL_REVISION: ${{ inputs.visual_revision }}
+          WHISPER_MODEL: ${{ inputs.whisper_model }}
+          WHISPER_REVISION: ${{ inputs.whisper_revision }}
+        run: |
+          set -euo pipefail
+          docker buildx version
+          metadata="${RUNNER_TEMP}/model-bundle-build-metadata.json"
+          candidate_tag="${REGISTRY_REPOSITORY}:candidate-${GITHUB_SHA}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker buildx build \
+            --build-arg "PYTHON_IMAGE=${PYTHON_BASE_IMAGE}" \
+            --build-arg "TEXT_MODEL=${TEXT_MODEL}" \
+            --build-arg "TEXT_REVISION=${TEXT_REVISION}" \
+            --build-arg "VISUAL_MODEL=${VISUAL_MODEL}" \
+            --build-arg "VISUAL_REVISION=${VISUAL_REVISION}" \
+            --build-arg "RERANKER_MODEL=${RERANKER_MODEL}" \
+            --build-arg "RERANKER_REVISION=${RERANKER_REVISION}" \
+            --build-arg "WHISPER_MODEL=${WHISPER_MODEL}" \
+            --build-arg "WHISPER_REVISION=${WHISPER_REVISION}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            --metadata-file "${metadata}" \
+            --no-cache \
+            --platform linux/amd64 \
+            --provenance=mode=max \
+            --pull \
+            --push \
+            --sbom=false \
+            --tag "${candidate_tag}" \
+            --target model-bundle \
+            .
+          digest="$(jq -er '."containerimage.digest" | select(test("^sha256:[a-f0-9]{64}$"))' "${metadata}")"
+          image_ref="${REGISTRY_REPOSITORY}@${digest}"
+          docker buildx imagetools inspect "${image_ref}" >/dev/null
+          {
+            echo "candidate_tag=${candidate_tag}"
+            echo "digest=${digest}"
+            echo "image_ref=${image_ref}"
+            echo "repository=${REGISTRY_REPOSITORY}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Boot the digest offline and verify every bundled model file
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.subject.outputs.image_ref }}
+        run: |
+          set -euo pipefail
+          docker pull "${IMAGE_REF}"
+          test "$(docker image inspect --format '{{.Config.User}}' "${IMAGE_REF}")" = "10001:10001"
+          test "$(docker image inspect --format '{{json .Config.Entrypoint}}' "${IMAGE_REF}")" = \
+            '["python","/app/verify_model_bundle.py","--manifest","/models/bundle.json","--exec"]'
+          docker run --rm \
+            --cap-drop ALL \
+            --network none \
+            --read-only \
+            --security-opt no-new-privileges:true \
+            "${IMAGE_REF}" \
+            python -c "print('model bundle verified and executable')"
+
+      - name: Generate a CycloneDX SBOM from the exact digest
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          exit-code: "0"
+          format: cyclonedx
+          image-ref: ${{ steps.subject.outputs.image_ref }}
+          output: crisisweave-model-bundle.cdx.json
+          scan-type: image
+          scanners: vuln
+
+      - name: Reject high-severity vulnerabilities in the exact digest
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          exit-code: "1"
+          format: table
+          image-ref: ${{ steps.subject.outputs.image_ref }}
+          ignore-unfixed: false
+          scan-type: image
+          scanners: vuln
+          severity: CRITICAL,HIGH
+
+      - name: Upload the digest-bound SBOM
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: crisisweave-model-bundle-sbom-${{ github.run_id }}-${{ github.run_attempt }}
+          path: crisisweave-model-bundle.cdx.json
+          retention-days: 90
+
+      - name: Install the rendered-release validator dependency
+        run: python -m pip install --disable-pip-version-check PyYAML==6.0.3
+
+      - name: Render and validate the supplied Kubernetes release tree
+        id: kubernetes
+        shell: bash
+        env:
+          API_IMAGE: ${{ steps.subject.outputs.image_ref }}
+          OTEL_IMAGE: ${{ inputs.otel_image }}
+          RELEASE_TREE: ${{ steps.inputs.outputs.release_tree }}
+          UI_IMAGE: ${{ inputs.ui_image }}
+        run: |
+          set -euo pipefail
+          command -v kubectl >/dev/null
+          overlay="${GITHUB_WORKSPACE}/.promotion-overlay-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          rendered="${RUNNER_TEMP}/rendered-release"
+          mkdir -p "${overlay}" "${rendered}"
+          relative_tree="$(realpath --relative-to="${overlay}" "${RELEASE_TREE}")"
+          api_name="${API_IMAGE%@*}"
+          api_digest="${API_IMAGE##*@}"
+          ui_name="${UI_IMAGE%@*}"
+          ui_digest="${UI_IMAGE##*@}"
+          otel_name="${OTEL_IMAGE%@*}"
+          otel_digest="${OTEL_IMAGE##*@}"
+          cat > "${overlay}/kustomization.yaml" <<EOF
+          apiVersion: kustomize.config.k8s.io/v1beta1
+          kind: Kustomization
+          resources:
+            - ${relative_tree}
+          images:
+            - name: REPLACE_WITH_IMMUTABLE_API_IMAGE
+              newName: ${api_name}
+              digest: ${api_digest}
+            - name: REPLACE_WITH_IMMUTABLE_UI_IMAGE
+              newName: ${ui_name}
+              digest: ${ui_digest}
+            - name: REPLACE_WITH_IMMUTABLE_OTEL_IMAGE
+              newName: ${otel_name}
+              digest: ${otel_digest}
+          EOF
+          kubectl kustomize "${overlay}" > "${rendered}/release.yaml"
+          python scripts/validate_kubernetes_release.py "${rendered}" --rendered
+          python - "${rendered}/release.yaml" "${API_IMAGE}" "${UI_IMAGE}" "${OTEL_IMAGE}" <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          manifest, api_image, ui_image, otel_image = sys.argv[1:]
+          expected = {
+              "crisisweave-api": api_image,
+              "crisisweave-parser": api_image,
+              "crisisweave-worker": api_image,
+              "crisisweave-ui": ui_image,
+              "crisisweave-otel": otel_image,
+          }
+          seen: set[str] = set()
+          for document in yaml.safe_load_all(Path(manifest).read_text(encoding="utf-8")):
+              if not isinstance(document, dict) or document.get("kind") != "Deployment":
+                  continue
+              name = document.get("metadata", {}).get("name")
+              if name not in expected:
+                  continue
+              pod = document.get("spec", {}).get("template", {}).get("spec", {})
+              containers = [*pod.get("initContainers", []), *pod.get("containers", [])]
+              if not containers or any(item.get("image") != expected[name] for item in containers):
+                  raise SystemExit(f"{name} is not bound to its reviewed exact image digest")
+              seen.add(name)
+          if seen != set(expected):
+              raise SystemExit("rendered release is missing a mandatory deployment")
+          PY
+          release_digest="sha256:$(sha256sum "${rendered}/release.yaml" | cut -d ' ' -f 1)"
+          echo "release_digest=${release_digest}" >> "${GITHUB_OUTPUT}"
+          echo "rendered_path=${rendered}/release.yaml" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload the validated rendered release
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: crisisweave-rendered-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ steps.kubernetes.outputs.rendered_path }}
+          retention-days: 90
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@cad07c2e89fa2edd6e2d7bab4c1aa38e53f76003 # v4.1.1
+        with:
+          cosign-release: v3.0.6
+
+      - name: Keylessly sign and verify the exact image digest
+        shell: bash
+        env:
+          IMAGE_REF: ${{ steps.subject.outputs.image_ref }}
+        run: |
+          set -euo pipefail
+          expected_identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/promote.yml@${GITHUB_REF}"
+          cosign sign --yes "${IMAGE_REF}"
+          cosign verify \
+            --certificate-identity "${expected_identity}" \
+            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
+            "${IMAGE_REF}"
+
+      - name: Create keyless build-provenance attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          create-storage-record: false
+          push-to-registry: true
+          subject-digest: ${{ steps.subject.outputs.digest }}
+          subject-name: ${{ steps.subject.outputs.repository }}
+
+      - name: Create keyless SBOM attestation
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          create-storage-record: false
+          push-to-registry: true
+          sbom-path: crisisweave-model-bundle.cdx.json
+          subject-digest: ${{ steps.subject.outputs.digest }}
+          subject-name: ${{ steps.subject.outputs.repository }}
+
+      - name: Record the non-certifying promotion result
+        shell: bash
+        env:
+          IMAGE_DIGEST: ${{ steps.subject.outputs.digest }}
+          IMAGE_REF: ${{ steps.subject.outputs.image_ref }}
+          KUBERNETES_RELEASE_DIGEST: ${{ steps.kubernetes.outputs.release_digest }}
+          OTEL_IMAGE: ${{ inputs.otel_image }}
+          UI_IMAGE: ${{ inputs.ui_image }}
+        run: |
+          set -euo pipefail
+          sbom_digest="sha256:$(sha256sum crisisweave-model-bundle.cdx.json | cut -d ' ' -f 1)"
+          jq -n \
+            --arg commit "${GITHUB_SHA}" \
+            --arg image_digest "${IMAGE_DIGEST}" \
+            --arg image_ref "${IMAGE_REF}" \
+            --arg kubernetes_release_digest "${KUBERNETES_RELEASE_DIGEST}" \
+            --arg otel_image "${OTEL_IMAGE}" \
+            --arg sbom_digest "${sbom_digest}" \
+            --arg source_ref "${GITHUB_REF}" \
+            --arg ui_image "${UI_IMAGE}" \
+            '{
+              status: "release_candidate_validated",
+              commit: $commit,
+              source_ref: $source_ref,
+              image_ref: $image_ref,
+              image_digest: $image_digest,
+              sbom_digest: $sbom_digest,
+              kubernetes_release_digest: $kubernetes_release_digest,
+              ui_image: $ui_image,
+              otel_image: $otel_image,
+              production_certified: false
+            }' > promotion-summary.json
+
+      - name: Upload the promotion summary
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          if-no-files-found: error
+          name: crisisweave-promotion-summary-${{ github.run_id }}-${{ github.run_attempt }}
+          path: promotion-summary.json
+          retention-days: 90
+
+      - name: Remove registry credentials from the runner
+        if: ${{ always() }}
+        shell: bash
+        env:
+          REGISTRY_HOST: ${{ steps.inputs.outputs.registry_host }}
+        run: |
+          if [[ -n "${REGISTRY_HOST}" ]]; then
+            docker logout "${REGISTRY_HOST}" >/dev/null 2>&1 || true
+          fi

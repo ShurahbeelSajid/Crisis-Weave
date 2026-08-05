@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crisisweave-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: crisisweave-ui
+        crisisweave.io/egress-class: ui
+    spec:
+      serviceAccountName: crisisweave-ui
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-ui
+      containers:
+        - name: ui
+          image: REPLACE_WITH_IMMUTABLE_UI_IMAGE
+          env:
+            - name: CRISISWEAVE_API_URL
+              value: http://crisisweave-api:8000
+            - name: CRISISWEAVE_UI_AUTH_MODE
+              value: forwarded_bearer
+            - name: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+              value: "false"
+            - name: STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION
+              value: "true"
+            - name: STREAMLIT_SERVER_MAX_UPLOAD_SIZE
+              value: "50"
+          ports:
+            - name: http
+              containerPort: 8501
+          startupProbe:
+            httpGet:
+              path: /_stcore/health
+              port: http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /_stcore/health
+              port: http
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "1"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: temporary
+          emptyDir:
+            medium: Memory
+            sizeLimit: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crisisweave-ui
+spec:
+  selector:
+    app.kubernetes.io/name: crisisweave-ui
+  ports:
+    - name: http
+      port: 8501
+      targetPort: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crisisweave-ui
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crisisweave-ui
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crisisweave-ui
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-ui

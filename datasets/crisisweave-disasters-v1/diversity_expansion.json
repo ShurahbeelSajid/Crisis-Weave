@@ -1,0 +1,624 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "crisisweave-global-disasters",
+  "version": "2.1.0-source-registry",
+  "release_status": "source_registry",
+  "events": [
+    {
+      "event_id": "gfdrr-pakistan-floods-2022",
+      "canonical_name": "Pakistan monsoon floods 2022",
+      "hazard_type": "flood",
+      "start_date": "2022-06-14",
+      "country_codes": ["PK"],
+      "split": "train",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "GFDRR PDNA", "value": "P179991-2022"},
+      "sources": [
+        {
+          "source_id": "gfdrr-pakistan-floods-2022-pdna",
+          "publisher": "Government of Pakistan and development partners",
+          "publisher_domain": "worldbank.org",
+          "url": "https://documents.worldbank.org/en/publication/documents-reports/documentdetail/099910201032325572",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Joint government PDNA hosted by the World Bank; preserve all partner and embedded-image credits."
+        }
+      ]
+    },
+    {
+      "event_id": "gok-kerala-floods-2018",
+      "canonical_name": "Kerala floods and landslides 2018",
+      "hazard_type": "flood",
+      "start_date": "2018-06-01",
+      "country_codes": ["IN"],
+      "split": "train",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "Government of Kerala JRDNA", "value": "KERALA-2018"},
+      "sources": [
+        {
+          "source_id": "gok-kerala-floods-2018-jrdna",
+          "publisher": "Government of Kerala and World Bank",
+          "publisher_domain": "worldbank.org",
+          "url": "https://www.worldbank.org/en/news/press-release/2018/10/16/world-bank-commits-support-to-rebuild-a-more-resilient-kerala",
+          "media_type": "text/html",
+          "modalities": ["text", "image"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Official joint-assessment summary; retain Government of Kerala, World Bank and ADB attribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nrcan-wildfires-2023",
+      "canonical_name": "Canada wildfire season 2023",
+      "hazard_type": "wildfire",
+      "start_date": "2023-03-01",
+      "country_codes": ["CA"],
+      "split": "test",
+      "geographic_region": "north_america",
+      "languages": ["en", "fr"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "conflict_probe_pending",
+      "official_identifier": {"authority": "Natural Resources Canada", "value": "CWFIS-2023"},
+      "sources": [
+        {
+          "source_id": "nrcan-wildfires-2023-en",
+          "publisher": "Natural Resources Canada",
+          "publisher_domain": "canada.ca",
+          "url": "https://natural-resources.canada.ca/forests-forestry/wildland-fires/forest-fires",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Government of Canada content; verify Crown copyright, map credits and methodology before reuse."
+        },
+        {
+          "source_id": "eccc-wildfires-2023-fr",
+          "publisher": "Environment and Climate Change Canada",
+          "publisher_domain": "canada.ca",
+          "url": "https://www.canada.ca/fr/environnement-changement-climatique/services/dix-evenements-meteorologiques-plus-marquants/2023.html",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "languages": ["fr"],
+          "redistribution": "link_only",
+          "license_note": "French Government of Canada event account; compare scopes and burned-area methods rather than treating differing totals as errors."
+        }
+      ]
+    },
+    {
+      "event_id": "wmo-horn-drought-2020-2023",
+      "canonical_name": "Greater Horn of Africa drought 2020-2023",
+      "hazard_type": "drought",
+      "start_date": "2020-10-01",
+      "country_codes": ["DJ", "ET", "KE", "SO"],
+      "split": "train",
+      "geographic_region": "africa",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "degraded_or_incomplete",
+      "official_identifier": {"authority": "WMO", "value": "GHA-DROUGHT-2020-2023"},
+      "sources": [
+        {
+          "source_id": "wmo-horn-drought-2020-2023-outlook",
+          "publisher": "World Meteorological Organization",
+          "publisher_domain": "wmo.int",
+          "url": "https://wmo.int/media/news/east-africa-seasonal-outlook-short-rains-season",
+          "media_type": "text/html",
+          "modalities": ["text", "image"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "WMO and regional-center material; preserve all chart, dataset and partner credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSR222",
+      "canonical_name": "Freetown landslide and floods 2017",
+      "hazard_type": "landslide",
+      "start_date": "2017-08-14",
+      "country_codes": ["SL"],
+      "split": "test",
+      "geographic_region": "africa",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSR222"},
+      "sources": [
+        {
+          "source_id": "cems-EMSR222-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSR222/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union emergency maps; retain Copernicus and satellite-provider credits."
+        }
+      ]
+    },
+    {
+      "event_id": "wmo-india-pakistan-heat-2022",
+      "canonical_name": "India and Pakistan heatwave 2022",
+      "hazard_type": "extreme_heat",
+      "start_date": "2022-03-01",
+      "country_codes": ["IN", "PK"],
+      "split": "train",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "WMO", "value": "IND-PAK-HEAT-2022"},
+      "sources": [
+        {
+          "source_id": "wmo-india-pakistan-heat-2022",
+          "publisher": "World Meteorological Organization",
+          "publisher_domain": "wmo.int",
+          "url": "https://public.wmo.int/media/news/climate-change-made-heatwaves-india-and-pakistan-30-times-more-likely",
+          "media_type": "text/html",
+          "modalities": ["text", "image"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "WMO summary of a rapid attribution study; keep the study limitations and source credits visible."
+        }
+      ]
+    },
+    {
+      "event_id": "wmo-europe-heat-2022",
+      "canonical_name": "European heatwaves 2022",
+      "hazard_type": "extreme_heat",
+      "start_date": "2022-06-01",
+      "country_codes": ["ES", "FR", "GB", "IT", "PT"],
+      "split": "train",
+      "geographic_region": "europe",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "WMO", "value": "ESOTC-EUROPE-2022"},
+      "sources": [
+        {
+          "source_id": "wmo-europe-heat-2022-report",
+          "publisher": "World Meteorological Organization and Copernicus Climate Change Service",
+          "publisher_domain": "wmo.int",
+          "url": "https://wmo.int/resources/publication-series/state-of-climate-europe/state-of-climate-europe-2022",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "video_frame", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Joint WMO/Copernicus report; retain dataset, figure and video credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSN081",
+      "canonical_name": "Port of Beirut explosion 2020",
+      "hazard_type": "industrial_accident",
+      "start_date": "2020-08-04",
+      "country_codes": ["LB"],
+      "split": "test",
+      "geographic_region": "middle_east_north_africa",
+      "languages": ["en", "ar"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "conflict_probe_pending",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSN081"},
+      "sources": [
+        {
+          "source_id": "cems-EMSN081-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSN081/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union damage products; preserve imagery, population-layer and partner credits."
+        },
+        {
+          "source_id": "worldbank-beirut-2020-ar",
+          "publisher": "World Bank",
+          "publisher_domain": "worldbank.org",
+          "url": "https://documents.worldbank.org/en/publication/documents-reports/documentdetail/397011601593003710",
+          "media_type": "text/html",
+          "modalities": ["text", "pdf_page", "table"],
+          "languages": ["ar"],
+          "redistribution": "link_only",
+          "license_note": "Arabic official-hosted assessment material; preserve survey and publication notices."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSN026",
+      "canonical_name": "Igualada chemical explosion and toxic cloud 2015",
+      "hazard_type": "industrial_accident",
+      "start_date": "2015-02-12",
+      "country_codes": ["ES"],
+      "split": "train",
+      "geographic_region": "europe",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSN026"},
+      "sources": [
+        {
+          "source_id": "cems-EMSN026-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSN026/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union modeled plume and mapping products; retain model assumptions and credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSR558",
+      "canonical_name": "Hunga Tonga-Hunga Ha'apai eruption and tsunami 2022",
+      "hazard_type": "volcanic_eruption",
+      "start_date": "2022-01-15",
+      "country_codes": ["TO"],
+      "split": "test",
+      "geographic_region": "oceania",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "preliminary_unvalidated",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSR558"},
+      "sources": [
+        {
+          "source_id": "cems-EMSR558-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSR558/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union satellite damage products; preserve cloud-cover limitations and imagery credits."
+        }
+      ]
+    },
+    {
+      "event_id": "gfdrr-libya-floods-2023",
+      "canonical_name": "Storm Daniel and Derna floods 2023",
+      "hazard_type": "flood",
+      "start_date": "2023-09-10",
+      "country_codes": ["LY"],
+      "split": "development",
+      "geographic_region": "middle_east_north_africa",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "degraded_or_incomplete",
+      "official_identifier": {"authority": "GFDRR RDNA", "value": "LIBYA-DANIEL-2023"},
+      "sources": [
+        {
+          "source_id": "gfdrr-libya-floods-2023-rdna",
+          "publisher": "World Bank, European Union and United Nations",
+          "publisher_domain": "worldbank.org",
+          "url": "https://www.worldbank.org/en/news/press-release/2024/01/24/joint-world-bank-eu-un-report-assesses-damages-caused-by-catastrophic-flooding-in-libya",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Joint official RDNA; preserve conflict-sensitivity, uncertainty and partner credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSR715",
+      "canonical_name": "Valparaiso wildfires 2024",
+      "hazard_type": "wildfire",
+      "start_date": "2024-02-02",
+      "country_codes": ["CL"],
+      "split": "development",
+      "geographic_region": "latin_america_caribbean",
+      "languages": ["en", "es"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "conflict_probe_pending",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSR715"},
+      "sources": [
+        {
+          "source_id": "cems-EMSR715-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/news/wildfire-in-valparaiso-region-chile/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union rapid mapping account; retain timestamp and preliminary-status context."
+        },
+        {
+          "source_id": "senapred-valparaiso-2024",
+          "publisher": "Servicio Nacional de Prevencion y Respuesta ante Desastres",
+          "publisher_domain": "senapred.gob.cl",
+          "url": "https://www.senapred.gob.cl/2024/02/03/autoridades-mantienen-coordinaciones-por-incendios-forestales/",
+          "media_type": "text/html",
+          "modalities": ["text", "image"],
+          "languages": ["es"],
+          "redistribution": "link_only",
+          "license_note": "Spanish-language Chilean government situation report; timestamp every changing incident total."
+        }
+      ]
+    },
+    {
+      "event_id": "inumet-uruguay-drought-2020-2023",
+      "canonical_name": "Uruguay meteorological drought 2020-2023",
+      "hazard_type": "drought",
+      "start_date": "2020-01-01",
+      "country_codes": ["UY"],
+      "split": "test",
+      "geographic_region": "latin_america_caribbean",
+      "languages": ["es"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "INUMET", "value": "SEQUIA-2020-2023"},
+      "sources": [
+        {
+          "source_id": "inumet-uruguay-drought-final",
+          "publisher": "Instituto Uruguayo de Meteorologia",
+          "publisher_domain": "inumet.gub.uy",
+          "url": "https://www.inumet.gub.uy/sala-de-prensa/noticias/finalizo-la-sequia-meteorologica-2020-2023-en-todo-el-uruguay",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["es"],
+          "redistribution": "link_only",
+          "license_note": "Official Spanish meteorological report; preserve SPI definition, temporal scope and chart credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSR391",
+      "canonical_name": "Rouen Lubrizol chemical plant fire 2019",
+      "hazard_type": "industrial_accident",
+      "start_date": "2019-09-26",
+      "country_codes": ["FR"],
+      "split": "development",
+      "geographic_region": "europe",
+      "languages": ["en"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "degraded_or_incomplete",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSR391"},
+      "sources": [
+        {
+          "source_id": "cems-EMSR391-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSR391/",
+          "media_type": "text/html",
+          "modalities": ["text", "image"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Official activation has no delivered map products; absence must be represented rather than backfilled from unreviewed sources."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSR675",
+      "canonical_name": "Rhodes wildfire 2023",
+      "hazard_type": "wildfire",
+      "start_date": "2023-07-18",
+      "country_codes": ["GR"],
+      "split": "test",
+      "geographic_region": "europe",
+      "languages": ["el"],
+      "exposure_class": "historical_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "Greek Civil Protection", "value": "EMSR675"},
+      "sources": [
+        {
+          "source_id": "greece-EMSR675-products",
+          "publisher": "Hellenic Ministry for Climate Crisis and Civil Protection",
+          "publisher_domain": "civilprotection.gov.gr",
+          "url": "https://civilprotection.gov.gr/en/node/71876",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["el"],
+          "redistribution": "link_only",
+          "license_note": "Greek government catalogue of Copernicus products; retain national and Copernicus credits."
+        }
+      ]
+    },
+    {
+      "event_id": "cems-EMSN194",
+      "canonical_name": "Rio Grande do Sul floods 2024",
+      "hazard_type": "flood",
+      "start_date": "2024-04-29",
+      "country_codes": ["BR"],
+      "split": "test",
+      "geographic_region": "latin_america_caribbean",
+      "languages": ["en", "pt-BR"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "conflict_probe_pending",
+      "official_identifier": {"authority": "Copernicus EMS", "value": "EMSN194"},
+      "sources": [
+        {
+          "source_id": "cems-EMSN194-activation",
+          "publisher": "Copernicus Emergency Management Service",
+          "publisher_domain": "copernicus.eu",
+          "url": "https://mapping.emergency.copernicus.eu/activations/EMSN194/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "European Union flood mapping products; retain satellite, method and partner credits."
+        },
+        {
+          "source_id": "rs-defesa-civil-floods-2024",
+          "publisher": "Defesa Civil do Rio Grande do Sul",
+          "publisher_domain": "rs.gov.br",
+          "url": "https://defesacivil.rs.gov.br/defesa-civil-atualiza-balanco-das-enchentes-no-rs-10-6-9h-6671eb9e34066",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["pt-BR"],
+          "redistribution": "link_only",
+          "license_note": "Timestamped Portuguese state-government bulletin; changing totals must retain their publication time."
+        }
+      ]
+    },
+    {
+      "event_id": "zambia-drought-2024",
+      "canonical_name": "Zambia drought emergency 2024",
+      "hazard_type": "drought",
+      "start_date": "2024-01-01",
+      "country_codes": ["ZM"],
+      "split": "train",
+      "geographic_region": "africa",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "degraded_or_incomplete",
+      "official_identifier": {"authority": "Government of Zambia", "value": "DROUGHT-EMERGENCY-2024"},
+      "sources": [
+        {
+          "source_id": "zambia-drought-declaration-2024",
+          "publisher": "Cabinet Office, Government of Zambia",
+          "publisher_domain": "cabinet.gov.zm",
+          "url": "https://www.cabinet.gov.zm/newsite/wp-content/uploads/2024/04/Statement-on-Drought-as-a-National-Disaster-and-Emergency-H.E.docx.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Official presidential declaration; review document accessibility and government reuse terms before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "ksdma-wayanad-landslide-2024",
+      "canonical_name": "Meppadi-Wayanad landslide 2024",
+      "hazard_type": "landslide",
+      "start_date": "2024-07-30",
+      "country_codes": ["IN"],
+      "split": "train",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "Kerala SDMA", "value": "MEPPADI-2024"},
+      "sources": [
+        {
+          "source_id": "ksdma-wayanad-memorandum-2024",
+          "publisher": "Kerala State Disaster Management Authority",
+          "publisher_domain": "kerala.gov.in",
+          "url": "https://sdma.kerala.gov.in/reports-landslides-2024/",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Government of Kerala report index; hash the selected memorandum/PDNA and preserve embedded credits."
+        }
+      ]
+    },
+    {
+      "event_id": "imd-north-india-heat-2024",
+      "canonical_name": "North India heatwave 2024",
+      "hazard_type": "extreme_heat",
+      "start_date": "2024-04-01",
+      "country_codes": ["IN"],
+      "split": "test",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "authoritative",
+      "official_identifier": {"authority": "India Meteorological Department", "value": "HEATWAVE-2024"},
+      "sources": [
+        {
+          "source_id": "imd-heatwave-2024-summary",
+          "publisher": "India Meteorological Department",
+          "publisher_domain": "imd.gov.in",
+          "url": "https://mausam.imd.gov.in/Forecast/marquee_data/Annual%20climate%20summary%202024_e%20book%20-%20final_compressed.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Official English annual climate summary; preserve map, station and method notes."
+        }
+      ]
+    },
+    {
+      "event_id": "unosat-FL20240512AFG",
+      "canonical_name": "Baghlan floods 2024",
+      "hazard_type": "flood",
+      "start_date": "2024-05-10",
+      "country_codes": ["AF"],
+      "split": "train",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "preliminary_unvalidated",
+      "official_identifier": {"authority": "UNOSAT GLIDE", "value": "FL20240512AFG"},
+      "sources": [
+        {
+          "source_id": "unosat-baghlan-flood-map-3846",
+          "publisher": "United Nations Satellite Centre",
+          "publisher_domain": "unosat.org",
+          "url": "https://unosat.org/products/3846",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Preliminary satellite analysis not field validated; retain that warning and imagery credits in every derivative."
+        }
+      ]
+    },
+    {
+      "event_id": "unosat-EQ20250328MMR",
+      "canonical_name": "Myanmar-Sagaing earthquake 2025",
+      "hazard_type": "earthquake",
+      "start_date": "2025-03-28",
+      "country_codes": ["MM"],
+      "split": "development",
+      "geographic_region": "asia",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "preliminary_unvalidated",
+      "official_identifier": {"authority": "UNOSAT GLIDE", "value": "EQ20250328MMR"},
+      "sources": [
+        {
+          "source_id": "unosat-myanmar-earthquake-map-4098",
+          "publisher": "United Nations Satellite Centre",
+          "publisher_domain": "unosat.org",
+          "url": "https://unosat.org/products/4098",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Preliminary satellite damage analysis not field validated; retain analyzed-area, image-date, boundary and imagery-credit limitations."
+        }
+      ]
+    },
+    {
+      "event_id": "unosat-FL20250601NGA",
+      "canonical_name": "Mokwa-Niger State floods 2025",
+      "hazard_type": "flood",
+      "start_date": "2025-05-28",
+      "country_codes": ["NG"],
+      "split": "development",
+      "geographic_region": "africa",
+      "languages": ["en"],
+      "exposure_class": "recent_public",
+      "evidence_condition": "preliminary_unvalidated",
+      "official_identifier": {"authority": "UNOSAT GLIDE", "value": "FL20250601NGA"},
+      "sources": [
+        {
+          "source_id": "unosat-mokwa-flood-map-4138",
+          "publisher": "United Nations Satellite Centre",
+          "publisher_domain": "unosat.org",
+          "url": "https://unosat.org/products/4138",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "pdf_page", "table"],
+          "languages": ["en"],
+          "redistribution": "link_only",
+          "license_note": "Preliminary satellite flood and damage assessment not field validated; retain analyzed-area, timestamp, imagery and population-layer credits."
+        }
+      ]
+    }
+  ]
+}

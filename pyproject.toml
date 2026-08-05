@@ -1,0 +1,107 @@
+[build-system]
+requires = ["hatchling==1.31.0", "editables==0.6"]
+build-backend = "hatchling.build"
+
+[project]
+name = "crisisweave"
+version = "0.1.0"
+description = "Evidence-first agentic multimodal RAG for disaster intelligence"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = { text = "Apache-2.0" }
+authors = [{ name = "CrisisWeave contributors" }]
+dependencies = [
+  "boto3==1.43.62",
+  "cryptography==49.0.0",
+  "duckdb==1.5.5",
+  "fastapi==0.141.1",
+  "grpcio==1.82.1",
+  "httpx==0.28.1",
+  "langgraph==1.2.10",
+  "pillow==12.3.0",
+  "prometheus-client==0.26.0",
+  "PyJWT[crypto]==2.13.0",
+  "pydantic==2.13.4",
+  "pydantic-settings==2.14.2",
+  "pypdfium2==5.12.1",
+  "pytz==2026.2",
+  "psycopg[binary]==3.3.4",
+  "psycopg-pool==3.3.1",
+  "python-multipart==0.0.32",
+  "qdrant-client==1.18.0",
+  "sqlglot==29.0.1",
+  "structlog==26.1.0",
+  "uvicorn[standard]==0.52.1",
+]
+
+[project.optional-dependencies]
+ml = [
+  "faster-whisper==1.2.1",
+  "sentence-transformers==5.6.1",
+  "torch==2.13.0",
+]
+ui = ["streamlit==1.60.0"]
+telemetry = [
+  "opentelemetry-api==1.44.0",
+  "opentelemetry-exporter-otlp-proto-http==1.44.0",
+  "opentelemetry-instrumentation-fastapi==0.65b0",
+  "opentelemetry-sdk==1.44.0",
+]
+dev = [
+  "bandit[toml]>=1.8,<2",
+  "hypothesis>=6.136,<7",
+  "mypy>=1.17,<2",
+  "pip-audit>=2.9,<3",
+  "pytest>=8.4,<9",
+  "pytest-asyncio>=1.1,<2",
+  "pytest-cov>=6.2,<8",
+  "PyYAML==6.0.3",
+  "ruff>=0.12,<1",
+]
+
+[project.scripts]
+crisisweave = "crisisweave.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/crisisweave"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+  "integration: tests using local persistence adapters",
+  "security: abuse-case and security regression tests",
+]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["data", ".venv313", ".wheelhouse"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM", "ASYNC"]
+ignore = ["S101"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106"]
+"scripts/**/*.py" = ["S310"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["crisisweave"]
+ignore_missing_imports = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]
+
+[tool.coverage.run]
+branch = true
+source = ["crisisweave"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

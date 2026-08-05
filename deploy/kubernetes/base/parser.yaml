@@ -1,0 +1,175 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crisisweave-parser
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-parser
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: crisisweave-parser
+        crisisweave.io/egress-class: parser
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      serviceAccountName: crisisweave-parser
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-parser
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-parser
+      containers:
+        - name: parser
+          image: REPLACE_WITH_IMMUTABLE_API_IMAGE
+          args: ["parser-worker", "--host", "0.0.0.0", "--port", "8001"]
+          ports:
+            - name: parser
+              containerPort: 8001
+          env:
+            - name: CRISISWEAVE_APP_ENV
+              value: parser
+            - name: CRISISWEAVE_DATA_DIR
+              value: /tmp/runtime
+            - name: CRISISWEAVE_PARSER_SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: crisisweave-parser-runtime
+                  key: CRISISWEAVE_PARSER_SERVICE_TOKEN
+            - name: CRISISWEAVE_MODEL_LOCAL_FILES_ONLY
+              value: "true"
+            - name: CRISISWEAVE_EMBEDDING_PROVIDER
+              value: sentence_transformers
+            - name: CRISISWEAVE_TEXT_EMBEDDING_MODEL
+              value: /models/text
+            - name: CRISISWEAVE_VISUAL_EMBEDDING_MODEL
+              value: /models/visual
+            - name: CRISISWEAVE_TEXT_VECTOR_SIZE
+              value: "384"
+            - name: CRISISWEAVE_VISUAL_VECTOR_SIZE
+              value: "512"
+            - name: CRISISWEAVE_MODEL_BUNDLE_MANIFEST
+              value: /models/bundle.json
+            - name: CRISISWEAVE_TRANSCRIPTION_PROVIDER
+              value: faster_whisper
+            - name: CRISISWEAVE_WHISPER_MODEL
+              value: /models/whisper
+            - name: CRISISWEAVE_TELEMETRY_ENABLED
+              value: "true"
+            - name: CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT
+              value: https://crisisweave-otel:4318/v1/traces
+            - name: CRISISWEAVE_OTEL_SERVICE_NAME
+              value: crisisweave-parser
+            - name: CRISISWEAVE_OTEL_EXPORTER_CA_FILE
+              value: /otel-ca/ca.crt
+            - name: HF_HUB_OFFLINE
+              value: "1"
+            - name: TRANSFORMERS_OFFLINE
+              value: "1"
+          startupProbe:
+            tcpSocket:
+              port: parser
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: parser
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: parser
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "2"
+              memory: 4Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: temporary
+              mountPath: /tmp
+            - name: otel-ca
+              mountPath: /otel-ca
+              readOnly: true
+      volumes:
+        - name: temporary
+          emptyDir:
+            medium: Memory
+            sizeLimit: 256Mi
+        - name: otel-ca
+          configMap:
+            name: crisisweave-internal-ca
+            items:
+              - key: ca.crt
+                path: ca.crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crisisweave-parser
+  labels:
+    app.kubernetes.io/name: crisisweave-parser
+spec:
+  selector:
+    app.kubernetes.io/name: crisisweave-parser
+  ports:
+    - name: parser
+      port: 8001
+      targetPort: parser
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crisisweave-parser
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crisisweave-parser
+  minReplicas: 2
+  maxReplicas: 20
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crisisweave-parser
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-parser

@@ -1,0 +1,102 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: crisisweave-api
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-api
+  namespaceSelector:
+    matchNames: ["crisisweave"]
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      authorization:
+        type: Bearer
+        credentials:
+          name: crisisweave-api-runtime
+          key: CRISISWEAVE_METRICS_API_KEY
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: crisisweave-worker
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-worker
+  namespaceSelector:
+    matchNames: ["crisisweave"]
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crisisweave-slos
+spec:
+  groups:
+    - name: crisisweave.pipeline
+      interval: 30s
+      rules:
+        - record: crisisweave:slo_query_end_to_end_seconds:p50_5m
+          expr: histogram_quantile(0.50, sum by (le) (rate(crisisweave_query_end_to_end_duration_seconds_bucket{status_class="2xx"}[5m])))
+        - record: crisisweave:slo_query_end_to_end_seconds:p95_5m
+          expr: histogram_quantile(0.95, sum by (le) (rate(crisisweave_query_end_to_end_duration_seconds_bucket{status_class="2xx"}[5m])))
+        - record: crisisweave:slo_query_end_to_end_seconds:p99_5m
+          expr: histogram_quantile(0.99, sum by (le) (rate(crisisweave_query_end_to_end_duration_seconds_bucket{status_class="2xx"}[5m])))
+        - record: crisisweave:slo_ingestion_end_to_end_seconds:p50_30m
+          expr: histogram_quantile(0.50, sum by (le) (rate(crisisweave_ingestion_job_end_to_end_seconds_bucket{status="succeeded"}[30m])))
+        - record: crisisweave:slo_ingestion_end_to_end_seconds:p95_30m
+          expr: histogram_quantile(0.95, sum by (le) (rate(crisisweave_ingestion_job_end_to_end_seconds_bucket{status="succeeded"}[30m])))
+        - record: crisisweave:slo_ingestion_end_to_end_seconds:p99_30m
+          expr: histogram_quantile(0.99, sum by (le) (rate(crisisweave_ingestion_job_end_to_end_seconds_bucket{status="succeeded"}[30m])))
+        - record: crisisweave:slo_pipeline_error_ratio:rate5m
+          expr: sum(rate(crisisweave_pipeline_operations_total{status="error"}[5m])) / clamp_min(sum(rate(crisisweave_pipeline_operations_total[5m])), 0.000001)
+        - alert: CrisisWeaveQueryLatencySLOBreach
+          expr: crisisweave:slo_query_end_to_end_seconds:p95_5m > 10
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrisisWeave query p95 exceeds ten seconds
+        - alert: CrisisWeaveIngestionLatencySLOBreach
+          expr: crisisweave:slo_ingestion_end_to_end_seconds:p95_30m > 600
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrisisWeave ingestion p95 exceeds ten minutes
+        - alert: CrisisWeavePipelineErrorBudgetBurn
+          expr: crisisweave:slo_pipeline_error_ratio:rate5m > 0.01
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: CrisisWeave pipeline error ratio exceeds one percent
+        - alert: CrisisWeaveDeadLetterPresent
+          expr: max(crisisweave_ingestion_jobs{status="dead_letter"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrisisWeave has durable dead-letter ingestion jobs
+        - alert: CrisisWeaveQueueMetricsStale
+          expr: increase(crisisweave_ingestion_job_metric_refresh_failures_total[10m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CrisisWeave worker could not refresh durable queue metrics
+        - alert: CrisisWeaveLifecycleOutboxStale
+          expr: max(crisisweave_ingestion_lifecycle_outbox_oldest_pending_seconds) > 300
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: CrisisWeave lifecycle evidence has remained undelivered for over five minutes

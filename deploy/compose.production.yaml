@@ -1,0 +1,548 @@
+name: crisisweave-production
+
+# Promotion reference: every image variable must be an immutable registry reference with @sha256.
+# The API image must be built from the Dockerfile model-bundle target with pinned model revisions.
+# The gateway image must be built from the Dockerfile gateway target so its Caddyfile is content-bound.
+# The ClamAV image must be built from the clamav-runtime target so its stream limit is content-bound.
+x-production-shared: &production-shared
+  CRISISWEAVE_APP_ENV: production
+  CRISISWEAVE_DATA_DIR: /data
+  CRISISWEAVE_DATABASE_BACKEND: postgresql
+  CRISISWEAVE_POSTGRES_POOL_MIN_SIZE: ${CRISISWEAVE_POSTGRES_POOL_MIN_SIZE:-1}
+  CRISISWEAVE_POSTGRES_POOL_MAX_SIZE: ${CRISISWEAVE_POSTGRES_POOL_MAX_SIZE:-8}
+  CRISISWEAVE_OBJECT_STORE_BACKEND: s3
+  CRISISWEAVE_S3_BUCKET: ${CRISISWEAVE_S3_BUCKET:?versioned object-storage bucket is required}
+  CRISISWEAVE_S3_PREFIX: ${CRISISWEAVE_S3_PREFIX:-crisisweave}
+  CRISISWEAVE_S3_REGION: ${CRISISWEAVE_S3_REGION:?S3 signing region is required}
+  CRISISWEAVE_S3_ENDPOINT_URL: ${CRISISWEAVE_S3_ENDPOINT_URL:-}
+  CRISISWEAVE_S3_ADDRESSING_STYLE: ${CRISISWEAVE_S3_ADDRESSING_STYLE:-auto}
+  CRISISWEAVE_S3_SERVER_SIDE_ENCRYPTION: ${CRISISWEAVE_S3_SERVER_SIDE_ENCRYPTION:-AES256}
+  CRISISWEAVE_S3_KMS_KEY_ID: ${CRISISWEAVE_S3_KMS_KEY_ID:-}
+  CRISISWEAVE_INGESTION_WORKER_ENABLED: "false"
+  CRISISWEAVE_INGESTION_LIFECYCLE_RETENTION_DAYS: ${CRISISWEAVE_INGESTION_LIFECYCLE_RETENTION_DAYS:-14}
+  CRISISWEAVE_ANALYTICS_TIMEOUT_SECONDS: "10"
+  CRISISWEAVE_MAX_STRUCTURED_ROWS_PER_TENANT: "250000"
+  CRISISWEAVE_MAX_UPLOAD_BYTES: "52428800"
+  CRISISWEAVE_MIN_FREE_DISK_BYTES: "268435456"
+  CRISISWEAVE_QDRANT_URL: ${CRISISWEAVE_QDRANT_URL:?HTTPS Qdrant URL is required}
+  CRISISWEAVE_EMBEDDING_PROVIDER: sentence_transformers
+  CRISISWEAVE_TEXT_EMBEDDING_MODEL: /models/text
+  CRISISWEAVE_VISUAL_EMBEDDING_MODEL: /models/visual
+  CRISISWEAVE_TEXT_VECTOR_SIZE: "384"
+  CRISISWEAVE_VISUAL_VECTOR_SIZE: "512"
+  CRISISWEAVE_MODEL_LOCAL_FILES_ONLY: "true"
+  CRISISWEAVE_MODEL_BUNDLE_MANIFEST: /models/bundle.json
+  HF_HUB_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+
+x-api-environment: &api-environment
+  <<: *production-shared
+  CRISISWEAVE_RUNTIME_ROLE: api
+  CRISISWEAVE_TELEMETRY_ENABLED: "true"
+  CRISISWEAVE_OTEL_SERVICE_NAME: crisisweave-api
+  CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT: ${CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT:?HTTPS OTLP /v1/traces endpoint is required}
+  CRISISWEAVE_OTEL_EXPORTER_HEADERS: ${CRISISWEAVE_API_OTEL_EXPORTER_HEADERS:-}
+  CRISISWEAVE_OTEL_EXPORTER_CA_FILE: /run/crisisweave/otel-ca.crt
+  CRISISWEAVE_OTEL_TRACE_SAMPLE_RATIO: ${CRISISWEAVE_OTEL_TRACE_SAMPLE_RATIO:-0.1}
+  CRISISWEAVE_COST_ACCOUNTING_ENABLED: "true"
+  CRISISWEAVE_QUERY_COMPUTE_COST_PER_HOUR_USD: ${CRISISWEAVE_QUERY_COMPUTE_COST_PER_HOUR_USD:?query compute allocation is required}
+  CRISISWEAVE_ROUTER_INPUT_COST_PER_MILLION_USD: ${CRISISWEAVE_ROUTER_INPUT_COST_PER_MILLION_USD:-0}
+  CRISISWEAVE_ROUTER_OUTPUT_COST_PER_MILLION_USD: ${CRISISWEAVE_ROUTER_OUTPUT_COST_PER_MILLION_USD:-0}
+  CRISISWEAVE_ANSWER_INPUT_COST_PER_MILLION_USD: ${CRISISWEAVE_ANSWER_INPUT_COST_PER_MILLION_USD:-0}
+  CRISISWEAVE_ANSWER_OUTPUT_COST_PER_MILLION_USD: ${CRISISWEAVE_ANSWER_OUTPUT_COST_PER_MILLION_USD:-0}
+  CRISISWEAVE_POSTGRES_DSN: ${CRISISWEAVE_API_POSTGRES_DSN:?TLS-verified API PostgreSQL DSN is required}
+  CRISISWEAVE_QDRANT_API_KEY: ${CRISISWEAVE_API_QDRANT_API_KEY:?API-scoped Qdrant key is required}
+  AWS_ACCESS_KEY_ID: ${CRISISWEAVE_API_S3_ACCESS_KEY_ID:?API-scoped S3 access key ID is required}
+  AWS_SECRET_ACCESS_KEY: ${CRISISWEAVE_API_S3_SECRET_ACCESS_KEY:?API-scoped S3 secret is required}
+  AWS_SESSION_TOKEN: ${CRISISWEAVE_API_S3_SESSION_TOKEN:-}
+  CRISISWEAVE_ENABLE_DOCS: "false"
+  # The standalone reference UI accepts only a scoped service key. OIDC users should call the API
+  # directly; the Kubernetes topology uses a trusted auth proxy/BFF for browser SSO.
+  CRISISWEAVE_AUTH_MODE: ${CRISISWEAVE_AUTH_MODE:-hybrid}
+  CRISISWEAVE_OIDC_ISSUER_URL: ${CRISISWEAVE_OIDC_ISSUER_URL:?OIDC issuer is required}
+  CRISISWEAVE_OIDC_AUDIENCE: ${CRISISWEAVE_OIDC_AUDIENCE:?OIDC audience is required}
+  CRISISWEAVE_OIDC_JWKS_URL: ${CRISISWEAVE_OIDC_JWKS_URL:?OIDC JWKS URL is required}
+  CRISISWEAVE_OIDC_ALGORITHMS: ${CRISISWEAVE_OIDC_ALGORITHMS:-RS256,ES256}
+  CRISISWEAVE_OIDC_TENANT_CLAIM: ${CRISISWEAVE_OIDC_TENANT_CLAIM:-tenant_id}
+  CRISISWEAVE_OIDC_ROLES_CLAIM: ${CRISISWEAVE_OIDC_ROLES_CLAIM:-roles}
+  CRISISWEAVE_OIDC_IDENTITY_TYPE_CLAIM: ${CRISISWEAVE_OIDC_IDENTITY_TYPE_CLAIM:-identity_type}
+  CRISISWEAVE_OIDC_JWKS_CACHE_SECONDS: ${CRISISWEAVE_OIDC_JWKS_CACHE_SECONDS:-300}
+  CRISISWEAVE_OIDC_JWKS_TIMEOUT_SECONDS: ${CRISISWEAVE_OIDC_JWKS_TIMEOUT_SECONDS:-5}
+  CRISISWEAVE_OIDC_JWKS_MAX_BYTES: ${CRISISWEAVE_OIDC_JWKS_MAX_BYTES:-1048576}
+  CRISISWEAVE_OIDC_ALLOW_PRIVATE_JWKS: ${CRISISWEAVE_OIDC_ALLOW_PRIVATE_JWKS:-false}
+  CRISISWEAVE_OIDC_CLOCK_SKEW_SECONDS: ${CRISISWEAVE_OIDC_CLOCK_SKEW_SECONDS:-30}
+  CRISISWEAVE_API_KEYS: ${CRISISWEAVE_API_KEYS:-}
+  CRISISWEAVE_SERVICE_KEY_ROLE_BINDINGS: ${CRISISWEAVE_SERVICE_KEY_ROLE_BINDINGS:-}
+  CRISISWEAVE_REVOKED_SERVICE_KEY_IDS: ${CRISISWEAVE_REVOKED_SERVICE_KEY_IDS:-}
+  CRISISWEAVE_OVERSIGHT_ENABLED: "true"
+  CRISISWEAVE_POSTGRES_RLS_ENABLED: "true"
+  CRISISWEAVE_IDENTITY_AUDIT_RETENTION_DAYS: ${CRISISWEAVE_IDENTITY_AUDIT_RETENTION_DAYS:-365}
+  CRISISWEAVE_MAX_IDENTITY_AUDIT_ROWS: ${CRISISWEAVE_MAX_IDENTITY_AUDIT_ROWS:-1000000}
+  CRISISWEAVE_REVIEW_RETENTION_DAYS: ${CRISISWEAVE_REVIEW_RETENTION_DAYS:-365}
+  CRISISWEAVE_HIGH_RISK_TERMS: ${CRISISWEAVE_HIGH_RISK_TERMS:-evacuation,shelter allocation,medical triage,dispatch,resource allocation,fatality,missing persons,dam failure,chemical release,evacuación,evacuação,évacuation,εκκένωση,निकासी,انخلا,إخلاء,evakuasi}
+  CRISISWEAVE_MINIMUM_ANSWER_CONFIDENCE: ${CRISISWEAVE_MINIMUM_ANSWER_CONFIDENCE:-0.65}
+  CRISISWEAVE_MAX_SOURCE_AGE_DAYS: ${CRISISWEAVE_MAX_SOURCE_AGE_DAYS:-30}
+  CRISISWEAVE_UNKNOWN_SOURCE_FRESHNESS_REQUIRES_REVIEW: ${CRISISWEAVE_UNKNOWN_SOURCE_FRESHNESS_REQUIRES_REVIEW:-false}
+  CRISISWEAVE_CONTRADICTION_ESCALATION_THRESHOLD: ${CRISISWEAVE_CONTRADICTION_ESCALATION_THRESHOLD:-0.35}
+  CRISISWEAVE_METRICS_API_KEY: ${CRISISWEAVE_METRICS_API_KEY:?distinct metrics key is required}
+  CRISISWEAVE_TRUST_PROXY_HEADERS: "true"
+  CRISISWEAVE_FORWARDED_ALLOW_IPS: ${CRISISWEAVE_FORWARDED_ALLOW_IPS:?trusted proxy CIDRs are required}
+  CRISISWEAVE_CORS_ORIGINS: ${CRISISWEAVE_CORS_ORIGINS:?exact HTTPS UI origin is required}
+  CRISISWEAVE_TRUSTED_HOSTS: ${CRISISWEAVE_TRUSTED_HOSTS:?public API host and api are required}
+  CRISISWEAVE_RERANKER_PROVIDER: cross_encoder
+  CRISISWEAVE_RERANKER_MODEL: /models/reranker
+  CRISISWEAVE_LLM_PROVIDER: openai_compatible
+  CRISISWEAVE_LLM_BASE_URL: ${CRISISWEAVE_LLM_BASE_URL:?HTTPS LLM base URL is required}
+  CRISISWEAVE_LLM_API_KEY: ${CRISISWEAVE_LLM_API_KEY:?LLM key is required}
+  CRISISWEAVE_LLM_ROUTER_MODEL: ${CRISISWEAVE_LLM_ROUTER_MODEL:?tool-capable router model is required}
+  CRISISWEAVE_LLM_ANSWER_MODEL: ${CRISISWEAVE_LLM_ANSWER_MODEL:?vision-capable answer model is required}
+  CRISISWEAVE_PROVIDER_CANARY_ON_STARTUP: "true"
+  CRISISWEAVE_WEB_SEARCH_PROVIDER: ${CRISISWEAVE_WEB_SEARCH_PROVIDER:-disabled}
+  CRISISWEAVE_TAVILY_API_KEY: ${CRISISWEAVE_TAVILY_API_KEY:-}
+  CRISISWEAVE_TAVILY_ENDPOINT: ${CRISISWEAVE_TAVILY_ENDPOINT:-https://api.tavily.com/search}
+
+x-worker-environment: &worker-environment
+  <<: *production-shared
+  CRISISWEAVE_RUNTIME_ROLE: ingestion_worker
+  CRISISWEAVE_TELEMETRY_ENABLED: "true"
+  CRISISWEAVE_OTEL_SERVICE_NAME: crisisweave-worker
+  CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT: ${CRISISWEAVE_OTEL_EXPORTER_OTLP_ENDPOINT:?HTTPS OTLP /v1/traces endpoint is required}
+  CRISISWEAVE_OTEL_EXPORTER_HEADERS: ${CRISISWEAVE_WORKER_OTEL_EXPORTER_HEADERS:-}
+  CRISISWEAVE_OTEL_EXPORTER_CA_FILE: /run/crisisweave/otel-ca.crt
+  CRISISWEAVE_OTEL_TRACE_SAMPLE_RATIO: ${CRISISWEAVE_OTEL_TRACE_SAMPLE_RATIO:-0.1}
+  CRISISWEAVE_COST_ACCOUNTING_ENABLED: "true"
+  CRISISWEAVE_INGESTION_COMPUTE_COST_PER_HOUR_USD: ${CRISISWEAVE_INGESTION_COMPUTE_COST_PER_HOUR_USD:?worker compute allocation is required}
+  CRISISWEAVE_POSTGRES_DSN: ${CRISISWEAVE_WORKER_POSTGRES_DSN:?TLS-verified worker PostgreSQL DSN is required}
+  CRISISWEAVE_QDRANT_API_KEY: ${CRISISWEAVE_WORKER_QDRANT_API_KEY:?worker-scoped Qdrant key is required}
+  AWS_ACCESS_KEY_ID: ${CRISISWEAVE_WORKER_S3_ACCESS_KEY_ID:?worker-scoped S3 access key ID is required}
+  AWS_SECRET_ACCESS_KEY: ${CRISISWEAVE_WORKER_S3_SECRET_ACCESS_KEY:?worker-scoped S3 secret is required}
+  AWS_SESSION_TOKEN: ${CRISISWEAVE_WORKER_S3_SESSION_TOKEN:-}
+  CRISISWEAVE_MAX_CONCURRENT_INGESTIONS: "1"
+  CRISISWEAVE_WORKER_METRICS_HOST: 0.0.0.0
+  CRISISWEAVE_WORKER_METRICS_PORT: "9100"
+  CRISISWEAVE_RECONCILIATION_INTERVAL_SECONDS: "60"
+  CRISISWEAVE_PARSER_SERVICE_TOKEN: ${CRISISWEAVE_PARSER_SERVICE_TOKEN:?distinct parser service key is required}
+  CRISISWEAVE_TRANSCRIPTION_PROVIDER: faster_whisper
+  CRISISWEAVE_WHISPER_MODEL: /models/whisper
+  CRISISWEAVE_MALWARE_SCANNER_HOST: clamav
+  CRISISWEAVE_MAX_MALWARE_SIGNATURE_AGE_HOURS: "72"
+  CRISISWEAVE_LLM_PROVIDER: disabled
+  CRISISWEAVE_PROVIDER_CANARY_ON_STARTUP: "false"
+  CRISISWEAVE_RERANKER_PROVIDER: lexical
+  CRISISWEAVE_WEB_SEARCH_PROVIDER: disabled
+  CRISISWEAVE_TRUST_PROXY_HEADERS: "false"
+
+x-migration-environment: &migration-environment
+  <<: *production-shared
+  CRISISWEAVE_RUNTIME_ROLE: migration
+  CRISISWEAVE_POSTGRES_DSN: ${CRISISWEAVE_MIGRATION_POSTGRES_DSN:?TLS-verified migration PostgreSQL DSN is required}
+  CRISISWEAVE_POSTGRES_API_ROLE: ${CRISISWEAVE_POSTGRES_API_ROLE:?API PostgreSQL role name is required}
+  CRISISWEAVE_POSTGRES_WORKER_ROLE: ${CRISISWEAVE_POSTGRES_WORKER_ROLE:?worker PostgreSQL role name is required}
+  CRISISWEAVE_QDRANT_API_KEY: ${CRISISWEAVE_MIGRATION_QDRANT_API_KEY:?migration-scoped Qdrant key is required}
+  CRISISWEAVE_API_KEYS: ""
+  CRISISWEAVE_ENABLE_DOCS: "false"
+  CRISISWEAVE_LLM_PROVIDER: disabled
+  CRISISWEAVE_PROVIDER_CANARY_ON_STARTUP: "false"
+  CRISISWEAVE_RERANKER_PROVIDER: lexical
+  CRISISWEAVE_WEB_SEARCH_PROVIDER: disabled
+  CRISISWEAVE_TRUST_PROXY_HEADERS: "false"
+
+x-parser-environment: &parser-environment
+  CRISISWEAVE_APP_ENV: parser
+  CRISISWEAVE_DATA_DIR: /tmp/runtime
+  CRISISWEAVE_PARSER_SERVICE_TOKEN: ${CRISISWEAVE_PARSER_SERVICE_TOKEN:?distinct parser service key is required}
+  CRISISWEAVE_EMBEDDING_PROVIDER: sentence_transformers
+  CRISISWEAVE_TEXT_EMBEDDING_MODEL: /models/text
+  CRISISWEAVE_VISUAL_EMBEDDING_MODEL: /models/visual
+  CRISISWEAVE_TEXT_VECTOR_SIZE: "384"
+  CRISISWEAVE_VISUAL_VECTOR_SIZE: "512"
+  CRISISWEAVE_MODEL_BUNDLE_MANIFEST: /models/bundle.json
+  CRISISWEAVE_MODEL_LOCAL_FILES_ONLY: "true"
+  CRISISWEAVE_PARSER_WORKER_MEMORY_BYTES: "6442450944"
+  CRISISWEAVE_MAX_UPLOAD_BYTES: "52428800"
+  CRISISWEAVE_WHISPER_MODEL: /models/whisper
+  CRISISWEAVE_TRANSCRIPTION_PROVIDER: faster_whisper
+  HF_HUB_OFFLINE: "1"
+  TRANSFORMERS_OFFLINE: "1"
+
+services:
+  clamav-updater:
+    image: ${CRISISWEAVE_CLAMAV_IMAGE:?immutable configured ClamAV image digest is required}
+    init: true
+    user: clamav
+    entrypoint: ["/init-unprivileged"]
+    environment:
+      CLAMAV_NO_CLAMD: "true"
+      CLAMAV_NO_FRESHCLAMD: "false"
+      FRESHCLAM_CHECKS: "24"
+      CLAMAV_MAX_SIGNATURE_AGE_MINUTES: "4320"
+    volumes:
+      - clamav-db:/var/lib/clamav
+    networks: [clamav-egress]
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /run:rw,noexec,nosuid,size=32m
+      - /var/log/clamav:rw,noexec,nosuid,size=32m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 64
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          grep -qsx freshclam /proc/[0-9]*/comm &&
+          find /var/lib/clamav -maxdepth 1 -type f
+          \( -name main.cvd -o -name main.cld \)
+          -size +0c -print -quit | grep -q . &&
+          find /var/lib/clamav -maxdepth 1 -type f
+          \( -name daily.cvd -o -name daily.cld \)
+          -mmin "-$${CLAMAV_MAX_SIGNATURE_AGE_MINUTES}" -print -quit | grep -q .
+      interval: 30s
+      timeout: 10s
+      start_period: 600s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 2G
+
+  clamav:
+    image: ${CRISISWEAVE_CLAMAV_IMAGE:?immutable configured ClamAV image digest is required}
+    init: true
+    user: clamav
+    entrypoint: ["/init-unprivileged"]
+    volumes:
+      - clamav-db:/var/lib/clamav:ro
+    networks: [malware]
+    environment:
+      CLAMD_STARTUP_TIMEOUT: "600"
+      CLAMAV_NO_FRESHCLAMD: "true"
+    depends_on:
+      clamav-updater:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /run:rw,noexec,nosuid,size=32m
+      - /var/log/clamav:rw,noexec,nosuid,size=32m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+    healthcheck:
+      test: ["CMD", "clamdscan", "--ping", "10"]
+      interval: 30s
+      timeout: 10s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+
+  parser-a:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command: ["crisisweave", "parser-worker", "--host", "0.0.0.0", "--port", "8001"]
+    environment: *parser-environment
+    networks: [parser-a]
+    restart: unless-stopped
+    pids_limit: 128
+    stop_grace_period: 450s
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=256m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import os, urllib.request;
+          request = urllib.request.Request(
+          'http://127.0.0.1:8001/health/ready',
+          headers={'X-Parser-Key': os.environ['CRISISWEAVE_PARSER_SERVICE_TOKEN']});
+          urllib.request.urlopen(request, timeout=3)
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  parser-b:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command: ["crisisweave", "parser-worker", "--host", "0.0.0.0", "--port", "8001"]
+    environment: *parser-environment
+    networks: [parser-b]
+    restart: unless-stopped
+    pids_limit: 128
+    stop_grace_period: 450s
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=256m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import os, urllib.request;
+          request = urllib.request.Request(
+          'http://127.0.0.1:8001/health/ready',
+          headers={'X-Parser-Key': os.environ['CRISISWEAVE_PARSER_SERVICE_TOKEN']});
+          urllib.request.urlopen(request, timeout=3)
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  migrate:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command: ["crisisweave", "migrate"]
+    environment: *migration-environment
+    networks: [migration-storage-egress]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /data:rw,noexec,nosuid,size=64m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 64
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 4G
+
+  api:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command:
+      - crisisweave
+      - serve
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --workers
+      - ${CRISISWEAVE_API_WORKERS:-2}
+    environment: *api-environment
+    networks: [api-gateway, api-provider-egress]
+    volumes:
+      - ${CRISISWEAVE_OTEL_CA_HOST_PATH:?absolute OTLP CA bundle path is required}:/run/crisisweave/otel-ca.crt:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    stop_grace_period: 660s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+      - /data:rw,noexec,nosuid,size=512m
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          request = urllib.request.Request(
+          'http://127.0.0.1:8000/health/ready', headers={'Host': 'api'});
+          urllib.request.urlopen(request, timeout=3)
+      interval: 30s
+      timeout: 5s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  ingestion-worker-a:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command: ["crisisweave", "ingestion-worker"]
+    environment:
+      <<: *worker-environment
+      CRISISWEAVE_PARSER_SERVICE_URL: http://parser-a:8001
+    ports:
+      - "127.0.0.1:${CRISISWEAVE_WORKER_A_METRICS_PORT:-9101}:9100"
+    volumes:
+      - ${CRISISWEAVE_OTEL_CA_HOST_PATH:?absolute OTLP CA bundle path is required}:/run/crisisweave/otel-ca.crt:ro
+    networks: [parser-a, malware, worker-storage-egress]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+      parser-a:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 660s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+      - /data:rw,noexec,nosuid,size=2g
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 192
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/metrics', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  ingestion-worker-b:
+    image: ${CRISISWEAVE_API_IMAGE:?immutable model-bundled API image digest is required}
+    init: true
+    user: "10001:10001"
+    command: ["crisisweave", "ingestion-worker"]
+    environment:
+      <<: *worker-environment
+      CRISISWEAVE_PARSER_SERVICE_URL: http://parser-b:8001
+    ports:
+      - "127.0.0.1:${CRISISWEAVE_WORKER_B_METRICS_PORT:-9102}:9100"
+    volumes:
+      - ${CRISISWEAVE_OTEL_CA_HOST_PATH:?absolute OTLP CA bundle path is required}:/run/crisisweave/otel-ca.crt:ro
+    networks: [parser-b, malware, worker-storage-egress]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      clamav:
+        condition: service_healthy
+      parser-b:
+        condition: service_healthy
+    restart: unless-stopped
+    stop_grace_period: 660s
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+      - /data:rw,noexec,nosuid,size=2g
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 192
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:9100/metrics', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 180s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  ui:
+    image: ${CRISISWEAVE_UI_IMAGE:?immutable UI image digest is required}
+    init: true
+    user: "10001:10001"
+    environment:
+      CRISISWEAVE_API_URL: http://gateway:8080/api
+      CRISISWEAVE_UI_AUTH_MODE: api_key
+      CRISISWEAVE_MAX_UPLOAD_BYTES: "52428800"
+      CRISISWEAVE_INGESTION_CLIENT_TIMEOUT: "620"
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+      STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION: "true"
+      STREAMLIT_SERVER_MAX_UPLOAD_SIZE: "50"
+    networks: [frontend]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=128m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  gateway:
+    image: ${CRISISWEAVE_CADDY_IMAGE:?immutable reviewed gateway image digest is required}
+    environment:
+      CRISISWEAVE_DOMAIN: ${CRISISWEAVE_DOMAIN:?DNS name is required}
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    ports: ["80:80", "443:443"]
+    networks:
+      frontend: {}
+      api-gateway:
+        ipv4_address: ${CRISISWEAVE_GATEWAY_IPV4:-172.30.77.10}
+      gateway-egress: {}
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=64m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+
+networks:
+  frontend:
+    internal: true
+  api-gateway:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${CRISISWEAVE_API_GATEWAY_SUBNET:-172.30.77.0/24}
+  parser-a:
+    internal: true
+  parser-b:
+    internal: true
+  malware:
+    internal: true
+  api-provider-egress:
+  worker-storage-egress:
+  migration-storage-egress:
+  clamav-egress:
+  gateway-egress:
+
+volumes:
+  clamav-db:
+  caddy-data:
+  caddy-config:

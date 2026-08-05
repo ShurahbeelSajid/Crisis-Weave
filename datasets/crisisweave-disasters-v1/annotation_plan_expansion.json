@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "crisisweave-global-disasters",
+  "benchmark_version": "2.1.0-source-registry",
+  "annotation_status": "pending_human_adjudication",
+  "cases": [
+    {
+      "case_id": "plan-gfdrr-pakistan-floods-2022-grounding",
+      "event_id": "gfdrr-pakistan-floods-2022",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Create a page-region-grounded question about an impact map or chart; retain units and distinguish assessed from reported values.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-gok-kerala-floods-2018-citation",
+      "event_id": "gok-kerala-floods-2018",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation"],
+      "prompt_intent": "Ask for a source-scoped recovery fact and require atomic claim-to-evidence mappings.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-nrcan-wildfires-2023-sealed-conflict",
+      "event_id": "nrcan-wildfires-2023",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed French/English conflict question about differing official burned-area scopes and methods; the final question and labels remain outside the developer repository.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-wmo-horn-drought-2020-2023-abstention",
+      "event_id": "wmo-horn-drought-2020-2023",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "abstention"],
+      "prompt_intent": "Ask a deliberately source-bounded question whose answerability depends on missing local observations; inspect all authorized evidence before labeling abstention.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSR222-sealed-visual",
+      "event_id": "cems-EMSR222",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed map-grounded extent question and annotates PDF coordinates or bounding boxes, not captions alone.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-wmo-india-pakistan-heat-2022-citation",
+      "event_id": "wmo-india-pakistan-heat-2022",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation"],
+      "prompt_intent": "Separate observed impacts from attribution-study conclusions and cite each atomic claim.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-wmo-europe-heat-2022-multimodal",
+      "event_id": "wmo-europe-heat-2022",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Ask a chart comparison question and annotate chart-element identity plus plotted region.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSN081-sealed-conflict",
+      "event_id": "cems-EMSN081",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed Arabic/English conflict question comparing building-level satellite assessment while preserving time, scope and uncertainty.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSN026-visual",
+      "event_id": "cems-EMSN026",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Ask about a modeled plume time slice and require map-region and model-time grounding.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSR558-sealed-preliminary",
+      "event_id": "cems-EMSR558",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual", "abstention"],
+      "prompt_intent": "Custodian creates a sealed question testing cloud-cover and preliminary-analysis limitations and requiring abstention beyond mapped areas.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-gfdrr-libya-floods-2023-citation",
+      "event_id": "gfdrr-libya-floods-2023",
+      "split": "development",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Ask a municipality-scoped damage question and require region-level support plus uncertainty wording.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSR715-bilingual",
+      "event_id": "cems-EMSR715",
+      "split": "development",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Create a Spanish query requiring both timestamped Chilean reporting and a Copernicus mapped extent.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-inumet-uruguay-drought-2020-2023-sealed-chart",
+      "event_id": "inumet-uruguay-drought-2020-2023",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed Spanish SPI-chart question with chart-series identity, date range and region grounding.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSR391-abstention",
+      "event_id": "cems-EMSR391",
+      "split": "development",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "abstention"],
+      "prompt_intent": "Ask for a damage-map conclusion that the activation did not deliver; label abstention only after checking the frozen asset set.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSR675-sealed-greek-visual",
+      "event_id": "cems-EMSR675",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed Greek map-sequence question and grounds each claim to the correct product date and polygon region.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-cems-EMSN194-sealed-conflict",
+      "event_id": "cems-EMSN194",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed Portuguese question comparing timestamped official totals with mapped flood extent; no label or final question enters the developer repository.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-zambia-drought-2024-abstention",
+      "event_id": "zambia-drought-2024",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "abstention"],
+      "prompt_intent": "Create a source-limitation question about a recent low-resource-country event and require abstention rather than an answer inferred from fame.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-ksdma-wayanad-landslide-2024-visual",
+      "event_id": "ksdma-wayanad-landslide-2024",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Create a recent-event map/table question with explicit PDF coordinates and claim-level visual support.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-imd-north-india-heat-2024-sealed-english",
+      "event_id": "imd-north-india-heat-2024",
+      "split": "test",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual"],
+      "prompt_intent": "Custodian creates a sealed English heatwave-chart question suitable for paired closed-book and retrieval-enabled evaluation.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-unosat-FL20240512AFG-preliminary",
+      "event_id": "unosat-FL20240512AFG",
+      "split": "train",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual", "abstention"],
+      "prompt_intent": "Create a question that tests field-validation caveats and forbids generalizing beyond the analyzed polygon.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-unosat-EQ20250328MMR-preliminary",
+      "event_id": "unosat-EQ20250328MMR",
+      "split": "development",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual", "abstention"],
+      "prompt_intent": "Create a post-cutoff satellite-damage question that requires exact analyzed-area and field-validation caveats.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    },
+    {
+      "case_id": "plan-unosat-FL20250601NGA-preliminary",
+      "event_id": "unosat-FL20250601NGA",
+      "split": "development",
+      "annotation_status": "pending",
+      "task_types": ["retrieval", "routing", "citation", "visual", "abstention"],
+      "prompt_intent": "Create a recent low-resource-country flood question that distinguishes observed imagery from unvalidated estimates.",
+      "required_gold_fields": ["question", "expected_routes", "expected_behavior", "relevance", "claims"]
+    }
+  ]
+}

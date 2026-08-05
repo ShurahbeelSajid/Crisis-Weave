@@ -1,0 +1,63 @@
+{
+  "dataset": "CrisisWeave Wildfire Evidence Pack",
+  "version": "1.0.0",
+  "purpose": "A small reproducible cross-modal corpus for visual/report/table corroboration; not an operational alert feed.",
+  "assets": [
+    {
+      "id": "nasa-wildfire-video-2017",
+      "modality": "video",
+      "url": "https://svs.gsfc.nasa.gov/vis/a010000/a012700/a012742/NASA_PODCAST-12742_Satellite_Wildfires_ipod_sm.mp4",
+      "filename": "nasa_satellites_wildfires_2017.mp4",
+      "source_page": "https://svs.gsfc.nasa.gov/12742",
+      "credit": "NASA's Goddard Space Flight Center",
+      "license_note": "NASA content is generally public domain unless a page states otherwise; preserve credits and review embedded music terms."
+    },
+    {
+      "id": "nasa-wildfire-captions-2017",
+      "modality": "transcript",
+      "url": "https://svs.gsfc.nasa.gov/vis/a010000/a012700/a012742/Wildfire.en_US.srt",
+      "filename": "nasa_satellites_wildfires_2017.srt",
+      "source_page": "https://svs.gsfc.nasa.gov/12742",
+      "credit": "NASA's Goddard Space Flight Center",
+      "license_note": "Preserve NASA source attribution."
+    },
+    {
+      "id": "nasa-wildfire-frame-2017",
+      "modality": "image",
+      "url": "https://svs.gsfc.nasa.gov/vis/a010000/a012700/a012742/LARGE_MP4-12742_Satellite_Wildfires_large.00564_print.jpg",
+      "filename": "nasa_satellite_wildfire_frame.jpg",
+      "source_page": "https://svs.gsfc.nasa.gov/12742",
+      "credit": "NASA's Goddard Space Flight Center",
+      "license_note": "Preserve NASA source attribution."
+    },
+    {
+      "id": "nasa-smoky-skies-report",
+      "modality": "pdf",
+      "url": "https://earthobservatory.nasa.gov/blogs/eokids/wp-content/uploads/sites/6/2021/04/30_SmokySkies_April_2021.pdf",
+      "filename": "nasa_smoky_skies.pdf",
+      "source_page": "https://earthobservatory.nasa.gov/blogs/eokids/",
+      "credit": "NASA Earth Observatory",
+      "license_note": "Review the PDF's individual image credits before redistribution."
+    },
+    {
+      "id": "noaa-storm-events-2017",
+      "modality": "table",
+      "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/StormEvents_details-ftp_v1.0_d2017_c20260519.csv.gz",
+      "filename": "noaa_storm_events_2017.csv.gz",
+      "decompressed_filename": "noaa_storm_events_2017.csv",
+      "source_page": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/",
+      "credit": "NOAA National Centers for Environmental Information",
+      "license_note": "U.S. Government data; preserve provenance and note historical coverage/definition limitations."
+    },
+    {
+      "id": "noaa-storm-events-format",
+      "modality": "pdf",
+      "url": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/Storm-Data-Bulk-csv-Format.pdf",
+      "filename": "noaa_storm_events_format.pdf",
+      "source_page": "https://www.ncei.noaa.gov/pub/data/swdi/stormevents/csvfiles/",
+      "credit": "NOAA National Centers for Environmental Information",
+      "license_note": "U.S. Government publication; preserve provenance."
+    }
+  ]
+}
+

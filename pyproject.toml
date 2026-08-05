@@ -12,7 +12,7 @@ license = { text = "Apache-2.0" }
 authors = [{ name = "CrisisWeave contributors" }]
 dependencies = [
   "boto3==1.43.62",
-  "cryptography==49.0.0",
+  "cryptography==50.0.0",
   "duckdb==1.5.5",
   "fastapi==0.141.1",
   "grpcio==1.82.1",

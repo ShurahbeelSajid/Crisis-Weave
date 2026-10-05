@@ -1,0 +1,109 @@
+name: crisisweave
+
+services:
+  qdrant:
+    image: ${QDRANT_IMAGE:-qdrant/qdrant:v1.18.3-unprivileged}
+    environment:
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-local-qdrant-key}
+      QDRANT__TELEMETRY_DISABLED: "true"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks: [backend]
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      target: runtime
+    environment:
+      CRISISWEAVE_APP_ENV: development
+      CRISISWEAVE_DATA_DIR: /data
+      CRISISWEAVE_API_KEYS: ${CRISISWEAVE_API_KEYS:-local-dev-key}
+      CRISISWEAVE_CORS_ORIGINS: http://localhost:8501
+      CRISISWEAVE_TRUSTED_HOSTS: localhost,127.0.0.1,api
+      CRISISWEAVE_QDRANT_URL: http://qdrant:6333
+      CRISISWEAVE_QDRANT_API_KEY: ${QDRANT_API_KEY:-local-qdrant-key}
+      CRISISWEAVE_EMBEDDING_PROVIDER: ${CRISISWEAVE_EMBEDDING_PROVIDER:-hash}
+      CRISISWEAVE_RERANKER_PROVIDER: ${CRISISWEAVE_RERANKER_PROVIDER:-lexical}
+      CRISISWEAVE_LLM_PROVIDER: ${CRISISWEAVE_LLM_PROVIDER:-disabled}
+      CRISISWEAVE_LLM_BASE_URL: ${CRISISWEAVE_LLM_BASE_URL:-http://host.docker.internal:11434/v1}
+      CRISISWEAVE_LLM_API_KEY: ${CRISISWEAVE_LLM_API_KEY:-}
+      CRISISWEAVE_LLM_ROUTER_MODEL: ${CRISISWEAVE_LLM_ROUTER_MODEL:-qwen2.5:7b}
+      CRISISWEAVE_LLM_ANSWER_MODEL: ${CRISISWEAVE_LLM_ANSWER_MODEL:-qwen2.5vl:7b}
+      CRISISWEAVE_TRANSCRIPTION_PROVIDER: ${CRISISWEAVE_TRANSCRIPTION_PROVIDER:-disabled}
+    volumes:
+      - app-data:/data
+      - model-cache:/models
+    networks: [backend, egress]
+    ports:
+      - "127.0.0.1:${CRISISWEAVE_API_PORT:-8000}:8000"
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=256m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8G
+
+  ui:
+    build:
+      context: .
+      target: runtime-ui
+    command:
+      - streamlit
+      - run
+      - /app/apps/streamlit_app.py
+      - --server.address=0.0.0.0
+      - --server.port=8501
+      - --server.maxUploadSize=50
+    environment:
+      CRISISWEAVE_API_URL: http://api:8000
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+      STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION: "true"
+      STREAMLIT_SERVER_MAX_UPLOAD_SIZE: "50"
+      CRISISWEAVE_MAX_UPLOAD_BYTES: "52428800"
+      CRISISWEAVE_INGESTION_CLIENT_TIMEOUT: "620"
+    networks: [backend]
+    ports:
+      - "127.0.0.1:${CRISISWEAVE_UI_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health', timeout=3)"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=128m]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+networks:
+  backend:
+    internal: true
+  egress:
+
+volumes:
+  app-data:
+  model-cache:
+  qdrant-data:

@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "crisisweave-global-disasters",
+  "benchmark_version": "2.1.0-source-registry",
+  "minimum_private_events": 3,
+  "commitments": [],
+  "release_status": "blocked_pending_custodian_data",
+  "note": "No private event is fabricated. An independent custodian must acquire lawful post-cutoff or access-controlled events and publish only opaque commitments."
+}

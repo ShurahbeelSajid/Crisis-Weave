@@ -1,0 +1,266 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-api
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-ui
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: ingress
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: monitoring
+      ports:
+        - protocol: TCP
+          port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ui-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-ui
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: ingress
+      ports:
+        - protocol: TCP
+          port: 8501
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: parser-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-parser
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-worker
+      ports:
+        - protocol: TCP
+          port: 8001
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-metrics-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-worker
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: monitoring
+      ports:
+        - protocol: TCP
+          port: 9100
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-ingress
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-otel
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              crisisweave.io/egress-class: api
+        - podSelector:
+            matchLabels:
+              crisisweave.io/egress-class: worker
+        - podSelector:
+            matchLabels:
+              crisisweave.io/egress-class: parser
+      ports:
+        - protocol: TCP
+          port: 4318
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-egress
+spec:
+  podSelector: {}
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: api
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-otel
+      ports:
+        - protocol: TCP
+          port: 4318
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: api-egress-gateway
+      ports:
+        - protocol: TCP
+          port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worker-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: worker
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-otel
+      ports:
+        - protocol: TCP
+          port: 4318
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-parser
+      ports:
+        - protocol: TCP
+          port: 8001
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: storage-egress-gateway
+      ports:
+        - protocol: TCP
+          port: 8443
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: malware-scanner
+      ports:
+        - protocol: TCP
+          port: 3310
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: parser-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: parser
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-otel
+      ports:
+        - protocol: TCP
+          port: 4318
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: migration-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: migration
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: migration-egress-gateway
+      ports:
+        - protocol: TCP
+          port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: telemetry-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: telemetry
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              crisisweave.io/network-role: observability-egress-gateway
+      ports:
+        - protocol: TCP
+          port: 8443
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: ui-egress
+spec:
+  podSelector:
+    matchLabels:
+      crisisweave.io/egress-class: ui
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-api
+      ports:
+        - protocol: TCP
+          port: 8000

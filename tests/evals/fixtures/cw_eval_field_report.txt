@@ -1,0 +1,7 @@
+CrisisWeave deterministic evaluation fixture.
+
+The Cedar Ridge observation used call sign ORCHID-FALCON-731.
+The field team recorded wildfire containment at 37 percent.
+A dense amber smoke plume moved northeast at 14:30 UTC.
+
+This synthetic report exists only to verify deterministic retrieval, grounding, and citation behavior.

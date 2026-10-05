@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "shared_settings": {
+    "corpus_lock_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "model_bundle_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "hardware_class": "REPLACE_WITH_FROZEN_HARDWARE_CLASS",
+    "provider_region": "REPLACE_WITH_FROZEN_REGION",
+    "concurrency": 1,
+    "cache_policy": "cold_then_warm_reported_separately",
+    "warmup_queries": 5,
+    "repetitions": 3,
+    "price_sheet_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "measurement_boundary": "client_request_start_to_verified_response_end"
+  },
+  "systems": [
+    {
+      "system_id": "agentic_multimodal_rag",
+      "configuration": {"text_extraction": true, "visual_embeddings": true, "visual_pixels": true, "reranking": true, "sql_tool": true, "web_tool": true, "routing_mode": "agentic"}
+    },
+    {
+      "system_id": "text_only_rag",
+      "configuration": {"text_extraction": true, "visual_embeddings": false, "visual_pixels": false, "reranking": true, "sql_tool": false, "web_tool": false, "routing_mode": "fixed_vector"}
+    },
+    {
+      "system_id": "vector_only_rag",
+      "configuration": {"text_extraction": true, "visual_embeddings": true, "visual_pixels": true, "reranking": true, "sql_tool": false, "web_tool": false, "routing_mode": "fixed_vector"}
+    },
+    {
+      "system_id": "no_reranking",
+      "configuration": {"text_extraction": true, "visual_embeddings": true, "visual_pixels": true, "reranking": false, "sql_tool": true, "web_tool": true, "routing_mode": "agentic"}
+    },
+    {
+      "system_id": "no_visual_retrieval",
+      "configuration": {"text_extraction": true, "visual_embeddings": false, "visual_pixels": true, "reranking": true, "sql_tool": true, "web_tool": true, "routing_mode": "agentic"}
+    },
+    {
+      "system_id": "no_agentic_routing",
+      "configuration": {"text_extraction": true, "visual_embeddings": true, "visual_pixels": true, "reranking": true, "sql_tool": true, "web_tool": true, "routing_mode": "fixed_predeclared"}
+    }
+  ],
+  "template_only": true
+}

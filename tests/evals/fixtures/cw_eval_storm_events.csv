@@ -1,0 +1,4 @@
+EVENT_ID,YEAR,STATE,EVENT_TYPE,CZ_NAME,INJURIES_DIRECT,DEATHS_DIRECT,DAMAGE_PROPERTY,DAMAGE_CROPS,MAGNITUDE,EPISODE_NARRATIVE
+CW-EVAL-001,2097,ALPHA,Wildfire,Cedar Ridge,0,0,$1K,0,,Synthetic deterministic evaluation row one
+CW-EVAL-002,2097,ALPHA,Wildfire,Pine Mesa,1,0,$500,0,,Synthetic deterministic evaluation row two
+CW-EVAL-003,2097,BETA,Wildfire,Ash Valley,0,1,$2K,0,,Synthetic deterministic evaluation row three

@@ -1,0 +1,12 @@
+*
+!pyproject.toml
+!README.md
+!src/
+!src/**
+!apps/
+!apps/**
+!scripts/
+!scripts/cache_models.py
+!scripts/verify_model_bundle.py
+!deploy/
+!deploy/Caddyfile

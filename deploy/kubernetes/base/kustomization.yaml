@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: crisisweave
+resources:
+  - namespace.yaml
+  - serviceaccounts.yaml
+  - external-secrets.yaml
+  - runtime-config.yaml
+  - api.yaml
+  - worker.yaml
+  - parser.yaml
+  - ui.yaml
+  - telemetry.yaml
+  - network-policies.yaml
+  - slos.yaml
+  - mesh-security.yaml
+commonLabels:
+  app.kubernetes.io/part-of: crisisweave

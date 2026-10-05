@@ -1,0 +1,64 @@
+(api_proxy) {
+    uri strip_prefix /api
+    reverse_proxy api:8000 {
+        header_up Host api
+        health_uri /health/ready
+        health_headers {
+            Host api
+        }
+        health_interval 30s
+        health_timeout 5s
+        health_fails 2
+        health_passes 2
+        fail_duration 30s
+        max_fails 2
+        unhealthy_status 5xx
+        transport http {
+            dial_timeout 5s
+            response_header_timeout 650s
+        }
+    }
+}
+
+{$CRISISWEAVE_DOMAIN} {
+    encode zstd gzip
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "no-referrer"
+        -Server
+    }
+
+    handle /api/* {
+        import api_proxy
+    }
+
+    handle {
+        reverse_proxy ui:8501 {
+            flush_interval -1
+            transport http {
+                dial_timeout 5s
+                response_header_timeout 650s
+            }
+        }
+    }
+
+    request_body {
+        max_size 55MB
+    }
+}
+
+:8080 {
+    handle /api/* {
+        import api_proxy
+    }
+
+    handle {
+        respond "Not found" 404
+    }
+
+    request_body {
+        max_size 55MB
+    }
+}

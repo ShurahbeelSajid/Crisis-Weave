@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crisisweave-otel-config
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+            tls:
+              cert_file: /tls/tls.crt
+              key_file: /tls/tls.key
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 384
+        spike_limit_mib: 96
+      batch:
+        send_batch_size: 512
+        timeout: 5s
+      attributes/privacy:
+        actions:
+          - key: http.request.header.authorization
+            action: delete
+          - key: http.request.header.x_api_key
+            action: delete
+          - key: enduser.id
+            action: delete
+          - key: crisisweave.query
+            action: delete
+          - key: crisisweave.tenant_id
+            action: delete
+    exporters:
+      otlphttp/backend:
+        endpoint: ${env:OBSERVABILITY_OTLP_ENDPOINT}
+        headers:
+          Authorization: ${env:OBSERVABILITY_AUTHORIZATION}
+        sending_queue:
+          enabled: true
+          num_consumers: 4
+          queue_size: 2048
+        retry_on_failure:
+          enabled: true
+          max_elapsed_time: 300s
+    service:
+      telemetry:
+        logs:
+          level: warn
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, attributes/privacy, batch]
+          exporters: [otlphttp/backend]
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: crisisweave-otel
+spec:
+  secretName: crisisweave-otel-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: crisisweave-internal-ca
+  dnsNames:
+    - crisisweave-otel
+    - crisisweave-otel.crisisweave.svc
+    - crisisweave-otel.crisisweave.svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crisisweave-otel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-otel
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: crisisweave-otel
+        crisisweave.io/egress-class: telemetry
+      annotations:
+        reloader.stakater.com/auto: "true"
+    spec:
+      serviceAccountName: crisisweave-telemetry
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: crisisweave-otel
+      containers:
+        - name: collector
+          image: REPLACE_WITH_IMMUTABLE_OTEL_IMAGE
+          args: ["--config=/conf/config.yaml"]
+          envFrom:
+            - secretRef:
+                name: crisisweave-telemetry-runtime
+          ports:
+            - name: otlp-http
+              containerPort: 4318
+          startupProbe:
+            tcpSocket:
+              port: otlp-http
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: otlp-http
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: otlp-http
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: config
+              mountPath: /conf
+              readOnly: true
+            - name: tls
+              mountPath: /tls
+              readOnly: true
+            - name: temporary
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: crisisweave-otel-config
+        - name: tls
+          secret:
+            secretName: crisisweave-otel-tls
+        - name: temporary
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crisisweave-otel
+spec:
+  selector:
+    app.kubernetes.io/name: crisisweave-otel
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: crisisweave-otel
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: crisisweave-otel

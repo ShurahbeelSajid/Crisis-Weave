@@ -1,0 +1,578 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "crisisweave-cyclone-earthquake",
+  "version": "1.0.0-source-registry",
+  "release_status": "source_registry",
+  "description": "Event-disjoint two-hazard benchmark registry covering real tropical cyclones and earthquakes. This v1 scope favors consistent authoritative NOAA/USGS products over superficial hazard breadth. It records public-source pointers but does not claim that linked bytes have been frozen or that gold labels have been adjudicated.",
+  "source_url_audit": {
+    "checked_at": "2026-08-03",
+    "method": "Read-only HTTPS HEAD request with redirects enabled",
+    "result": "26 of 26 event/catalog/documentation URLs returned HTTP 200 on the declared NOAA or USGS host.",
+    "limitations": "This confirms address availability only; it is not a content-hash, license, completeness, or future-availability guarantee."
+  },
+  "split_policy": {
+    "unit": "canonical_event",
+    "train": "Model/index development and prompt iteration only.",
+    "development": "Threshold selection and error analysis only.",
+    "test": "Sealed final comparison; no prompt, model, or index selection.",
+    "prohibited": [
+      "random chunk splitting",
+      "placing one event's report, imagery, or derived chunks in multiple splits",
+      "using test questions or labels for prompt or threshold selection"
+    ]
+  },
+  "split_counts": {
+    "development": 6,
+    "test": 6,
+    "train": 12
+  },
+  "required_systems": [
+    {
+      "system_id": "agentic_multimodal_rag",
+      "description": "Candidate system with text and visual retrieval, reranking, and agentic vector/SQL/web routing enabled."
+    },
+    {
+      "system_id": "text_only_rag",
+      "description": "Conventional fixed vector RAG over textual/OCR evidence only; no visual embeddings, pixel inputs, SQL, web, or agentic routing."
+    },
+    {
+      "system_id": "vector_only_rag",
+      "description": "Always use multimodal vector retrieval and reranking; disable SQL, web, and agentic routing."
+    },
+    {
+      "system_id": "no_reranking",
+      "description": "Candidate configuration with the reranker bypassed and first-stage order retained."
+    },
+    {
+      "system_id": "no_visual_retrieval",
+      "description": "Keep agentic routing but remove image, video-frame, and rendered-PDF visual retrieval."
+    },
+    {
+      "system_id": "no_agentic_routing",
+      "description": "Use a fixed route policy selected before evaluation; no model-selected tools."
+    }
+  ],
+  "acquisition_policy": {
+    "raw_assets_committed": false,
+    "network_fetch_is_opt_in": true,
+    "freeze_requirement": "A frozen release must record SHA-256, final URL, byte size, retrieval time, content type, and extractor versions for every materialized asset.",
+    "license_requirement": "Review each asset and embedded third-party credit before redistribution. Link-only is the default until that review is complete.",
+    "annotation_requirement": "Gold cases require two independent annotators plus adjudication; source metadata alone is never a relevance or groundedness label."
+  },
+  "shared_structured_sources": [
+    {
+      "source_id": "nhc-hurdat2-atlantic-2025",
+      "publisher": "NOAA National Hurricane Center",
+      "url": "https://www.nhc.noaa.gov/data/hurdat/hurdat2-1851-2025-02272026.txt",
+      "format_documentation": "https://www.nhc.noaa.gov/data/hurdat/hurdat2-format-atl-1851-2021.pdf",
+      "selector": "Filter the catalog by each event's NOAA NHC official_identifier before ingestion.",
+      "ingestion_rule": "Never ingest the shared catalog into an event split. Materialize one event-scoped CSV per cyclone and lock both source and derivative hashes."
+    }
+  ],
+  "events": [
+    {
+      "event_id": "nhc-AL122005",
+      "canonical_name": "Hurricane Katrina",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2005-08-23",
+      "country_codes": ["BS", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL122005"},
+      "sources": [
+        {
+          "source_id": "nhc-AL122005-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL182005",
+      "canonical_name": "Hurricane Rita",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2005-09-18",
+      "country_codes": ["BS", "CU", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL182005"},
+      "sources": [
+        {
+          "source_id": "nhc-AL182005-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL182005_Rita.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL092008",
+      "canonical_name": "Hurricane Ike",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2008-09-01",
+      "country_codes": ["BS", "CU", "HT", "TC", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL092008"},
+      "sources": [
+        {
+          "source_id": "nhc-AL092008-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL092008_Ike.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL092011",
+      "canonical_name": "Hurricane Irene",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2011-08-21",
+      "country_codes": ["BS", "DO", "HT", "PR", "TC", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL092011"},
+      "sources": [
+        {
+          "source_id": "nhc-AL092011-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL092011_Irene.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL182012",
+      "canonical_name": "Hurricane Sandy",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2012-10-22",
+      "country_codes": ["BS", "CA", "CU", "DO", "HT", "JM", "PR", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL182012"},
+      "sources": [
+        {
+          "source_id": "nhc-AL182012-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL182012_Sandy.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL142016",
+      "canonical_name": "Hurricane Matthew",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2016-09-28",
+      "country_codes": ["BS", "CO", "CU", "DO", "HT", "JM", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL142016"},
+      "sources": [
+        {
+          "source_id": "nhc-AL142016-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL142016_Matthew.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL092017",
+      "canonical_name": "Hurricane Harvey",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2017-08-17",
+      "country_codes": ["BB", "BZ", "GD", "MX", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL092017"},
+      "sources": [
+        {
+          "source_id": "nhc-AL092017-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL092017_Harvey.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL112017",
+      "canonical_name": "Hurricane Irma",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2017-08-30",
+      "country_codes": ["AG", "BS", "CU", "DO", "FR", "GB", "HT", "KN", "NL", "PR", "TC", "US"],
+      "split": "train",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL112017"},
+      "sources": [
+        {
+          "source_id": "nhc-AL112017-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL112017_Irma.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-usp000h60h",
+      "canonical_name": "2010 Haiti earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2010-01-12",
+      "country_codes": ["DO", "HT"],
+      "split": "train",
+      "official_identifier": {"authority": "USGS ComCat", "value": "usp000h60h"},
+      "sources": [
+        {
+          "source_id": "usgs-usp000h60h-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/usp000h60h",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-official20110311054624120_30",
+      "canonical_name": "2011 Great Tohoku earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2011-03-11",
+      "country_codes": ["JP"],
+      "split": "train",
+      "official_identifier": {"authority": "USGS ComCat", "value": "official20110311054624120_30"},
+      "sources": [
+        {
+          "source_id": "usgs-official20110311054624120_30-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/official20110311054624120_30",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-us20002926",
+      "canonical_name": "2015 Gorkha earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2015-04-25",
+      "country_codes": ["BD", "CN", "IN", "NP"],
+      "split": "train",
+      "official_identifier": {"authority": "USGS ComCat", "value": "us20002926"},
+      "sources": [
+        {
+          "source_id": "usgs-us20002926-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us20002926",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-us20005j32",
+      "canonical_name": "2016 Ecuador earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2016-04-16",
+      "country_codes": ["CO", "EC"],
+      "split": "train",
+      "official_identifier": {"authority": "USGS ComCat", "value": "us20005j32"},
+      "sources": [
+        {
+          "source_id": "usgs-us20005j32-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us20005j32",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL152017",
+      "canonical_name": "Hurricane Maria",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2017-09-16",
+      "country_codes": ["DM", "DO", "FR", "GB", "HT", "PR", "TC", "US"],
+      "split": "development",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL152017"},
+      "sources": [
+        {
+          "source_id": "nhc-AL152017-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL152017_Maria.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL062018",
+      "canonical_name": "Hurricane Florence",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2018-08-31",
+      "country_codes": ["US"],
+      "split": "development",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL062018"},
+      "sources": [
+        {
+          "source_id": "nhc-AL062018-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL062018_Florence.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL142018",
+      "canonical_name": "Hurricane Michael",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2018-10-07",
+      "country_codes": ["CU", "MX", "US"],
+      "split": "development",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL142018"},
+      "sources": [
+        {
+          "source_id": "nhc-AL142018-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL142018_Michael.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL052019",
+      "canonical_name": "Hurricane Dorian",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2019-08-24",
+      "country_codes": ["BS", "CA", "US"],
+      "split": "development",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL052019"},
+      "sources": [
+        {
+          "source_id": "nhc-AL052019-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL052019_Dorian.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-us2000ar20",
+      "canonical_name": "2017 Puebla earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2017-09-19",
+      "country_codes": ["MX"],
+      "split": "development",
+      "official_identifier": {"authority": "USGS ComCat", "value": "us2000ar20"},
+      "sources": [
+        {
+          "source_id": "usgs-us2000ar20-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us2000ar20",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-us1000h3p4",
+      "canonical_name": "2018 Sulawesi earthquake and tsunami",
+      "hazard_type": "earthquake",
+      "start_date": "2018-09-28",
+      "country_codes": ["ID"],
+      "split": "development",
+      "official_identifier": {"authority": "USGS ComCat", "value": "us1000h3p4"},
+      "sources": [
+        {
+          "source_id": "usgs-us1000h3p4-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us1000h3p4",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL132020",
+      "canonical_name": "Hurricane Laura",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2020-08-20",
+      "country_codes": ["CU", "DO", "HT", "PR", "US"],
+      "split": "test",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL132020"},
+      "sources": [
+        {
+          "source_id": "nhc-AL132020-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL132020_Laura.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL092021",
+      "canonical_name": "Hurricane Ida",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2021-08-26",
+      "country_codes": ["CU", "US"],
+      "split": "test",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL092021"},
+      "sources": [
+        {
+          "source_id": "nhc-AL092021-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL092021_Ida.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL092022",
+      "canonical_name": "Hurricane Ian",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2022-09-23",
+      "country_codes": ["CU", "US"],
+      "split": "test",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL092022"},
+      "sources": [
+        {
+          "source_id": "nhc-AL092022-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL092022_Ian.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "nhc-AL102023",
+      "canonical_name": "Hurricane Idalia",
+      "hazard_type": "tropical_cyclone",
+      "start_date": "2023-08-26",
+      "country_codes": ["CU", "MX", "US"],
+      "split": "test",
+      "official_identifier": {"authority": "NOAA NHC", "value": "AL102023"},
+      "sources": [
+        {
+          "source_id": "nhc-AL102023-tcr",
+          "publisher": "NOAA National Hurricane Center",
+          "publisher_domain": "nhc.noaa.gov",
+          "url": "https://www.nhc.noaa.gov/data/tcr/AL102023_Idalia.pdf",
+          "media_type": "application/pdf",
+          "modalities": ["text", "pdf_page", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government report; preserve NOAA attribution and review every embedded third-party credit before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-ci38457511",
+      "canonical_name": "2019 Ridgecrest earthquake sequence mainshock",
+      "hazard_type": "earthquake",
+      "start_date": "2019-07-06",
+      "country_codes": ["US"],
+      "split": "test",
+      "official_identifier": {"authority": "USGS ComCat", "value": "ci38457511"},
+      "sources": [
+        {
+          "source_id": "usgs-ci38457511-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci38457511",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    },
+    {
+      "event_id": "usgs-us7000kufc",
+      "canonical_name": "2023 Al Haouz earthquake",
+      "hazard_type": "earthquake",
+      "start_date": "2023-09-08",
+      "country_codes": ["MA"],
+      "split": "test",
+      "official_identifier": {"authority": "USGS ComCat", "value": "us7000kufc"},
+      "sources": [
+        {
+          "source_id": "usgs-us7000kufc-event",
+          "publisher": "U.S. Geological Survey",
+          "publisher_domain": "earthquake.usgs.gov",
+          "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000kufc",
+          "media_type": "text/html",
+          "modalities": ["text", "image", "table"],
+          "redistribution": "link_only",
+          "license_note": "U.S. Government event products; preserve product contributors and review product-specific notices before redistribution."
+        }
+      ]
+    }
+  ]
+}

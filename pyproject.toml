@@ -13,7 +13,7 @@ authors = [{ name = "CrisisWeave contributors" }]
 dependencies = [
   "boto3==1.43.62",
   "cryptography==50.0.0",
-  "duckdb==1.5.5",
+  "duckdb==1.5.6",
   "fastapi==0.141.1",
   "grpcio==1.82.1",
   "httpx==0.28.1",

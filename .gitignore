@@ -16,6 +16,8 @@ models/
 *.duckdb
 *.log
 .streamlit/secrets.toml
+# Local project reference notes; never commit.
+context.md
 
 # Custodian-only benchmark material: never expose identities, plaintext test labels, or keys.
 datasets/**/annotator-*.json

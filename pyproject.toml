@@ -31,7 +31,7 @@ dependencies = [
   "qdrant-client==1.18.0",
   "sqlglot==29.0.1",
   "structlog==26.1.0",
-  "uvicorn[standard]==0.52.1",
+  "uvicorn[standard]==0.54.0",
 ]
 
 [project.optional-dependencies]

@@ -38,7 +38,7 @@ dependencies = [
 ml = [
   "faster-whisper==1.2.1",
   "sentence-transformers==5.6.1",
-  "torch==2.13.0",
+  "torch==2.14.1",
 ]
 ui = ["streamlit==1.60.0"]
 telemetry = [

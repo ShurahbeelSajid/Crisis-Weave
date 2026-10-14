@@ -299,7 +299,7 @@ jobs:
           severity: CRITICAL,HIGH
 
       - name: Upload the digest-bound SBOM
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: crisisweave-model-bundle-sbom-${{ github.run_id }}-${{ github.run_attempt }}
@@ -382,7 +382,7 @@ jobs:
           echo "rendered_path=${rendered}/release.yaml" >> "${GITHUB_OUTPUT}"
 
       - name: Upload the validated rendered release
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: crisisweave-rendered-release-${{ github.run_id }}-${{ github.run_attempt }}
@@ -458,7 +458,7 @@ jobs:
             }' > promotion-summary.json
 
       - name: Upload the promotion summary
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           if-no-files-found: error
           name: crisisweave-promotion-summary-${{ github.run_id }}-${{ github.run_attempt }}
